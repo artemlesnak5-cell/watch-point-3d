@@ -111,9 +111,10 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
 @media (max-width:720px){
   .lamp{top:76px;width:140px;height:22px;margin-left:-70px}
   .hint{display:none}
-  .scene{align-items:flex-end;padding-bottom:calc(9vh + env(safe-area-inset-bottom,0px))}
-  .scene.center{align-items:flex-end}
-  .copy{max-width:none;width:100%;padding:18px 0 0}
+  .scene{min-height:110svh}
+  .copy{position:fixed;left:max(20px,env(safe-area-inset-left,0px));right:max(20px,env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));max-width:none;gap:10px;pointer-events:auto}
+  .scene.center .copy{align-items:center;text-align:center}
+  .copy p{font-size:15px;line-height:1.45}
   .bg .glow{background:radial-gradient(70% 38% at 50% 30%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 60%,var(--night) 100%)}
   .big{font-size:84px}
   .copy h2{font-size:28px}
@@ -140,7 +141,7 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
 <div class="page">
   <section class="shelf" id="shelf" aria-label="Полка часов">
     <div class="lamp" aria-hidden="true"></div>
-    <div class="shelf-ui">
+    <div class="shelf-ui" id="shelf-ui">
       <p class="label" id="label">PRX зелёный<small>T137.410.11.091.00</small></p>
       <div class="controls">
         <button class="ghost" type="button" id="prev" aria-label="Предыдущие часы">←</button>
@@ -297,12 +298,19 @@ window.addEventListener('wheel',e=>{ /* horizontal swipe on the shelf flips watc
   if(window.scrollY>innerHeight*.4||Math.abs(e.deltaX)<=Math.abs(e.deltaY)) return;
   const now=performance.now(); if(Math.abs(e.deltaX)<8||now-lastWheel<520) return; lastWheel=now; step(e.deltaX>0?1:-1);
 },{passive:true});
-let dragX=null;
-canvas.addEventListener('pointerdown',e=>{ if(window.scrollY<innerHeight*.4) dragX=e.clientX; });
-window.addEventListener('pointerup',e=>{ if(dragX==null) return; const dx=e.clientX-dragX; dragX=null;
-  if(Math.abs(dx)>45) step(dx<0?1:-1); else if(Math.abs(dx)<6) pick(e); });
-canvas.addEventListener('touchstart',e=>{ if(window.scrollY<innerHeight*.4) dragX=e.touches[0].clientX; },{passive:true});
-canvas.addEventListener('touchend',e=>{ if(dragX==null) return; const dx=e.changedTouches[0].clientX-dragX; dragX=null; if(Math.abs(dx)>40) step(dx<0?1:-1); },{passive:true});
+/* mouse: drag or click on the shelf */
+let drag=null;
+canvas.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||window.scrollY>innerHeight*.3) return; drag={x:e.clientX,y:e.clientY}; });
+window.addEventListener('pointerup',e=>{ if(!drag||e.pointerType!=='mouse') return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag=null;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5) step(dx<0?1:-1); else if(Math.hypot(dx,dy)<6) pick(e); });
+/* touch: a swipe flips watches only if it is clearly sideways and the page did not scroll meanwhile */
+let tch=null;
+canvas.addEventListener('touchstart',e=>{ if(e.touches.length!==1||window.scrollY>innerHeight*.3){tch=null;return;} const q=e.touches[0]; tch={x:q.clientX,y:q.clientY,sy:window.scrollY,t:performance.now()}; },{passive:true});
+canvas.addEventListener('touchcancel',()=>{tch=null;},{passive:true});
+canvas.addEventListener('touchend',e=>{ if(!tch) return; const q=e.changedTouches[0], dx=q.clientX-tch.x, dy=q.clientY-tch.y, scrolled=Math.abs(window.scrollY-tch.sy), dt=performance.now()-tch.t; tch=null;
+  if(scrolled>4) return;
+  if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.6) step(dx<0?1:-1);
+  else if(Math.hypot(dx,dy)<8&&dt<350) pick(q); },{passive:true});
 
 /* ---------- math ---------- */
 const M4={
@@ -470,15 +478,17 @@ const DIAL={
 
 /* ---------- choreography ---------- */
 /* pose: x,y,z (m), ry,rx,rz (deg), s, e = explode 0..1. Narrow screens use n:{…} overrides. bg = [glow, deep] or 'w' for the selected watch. */
+/* phone layout: camera + where the watch sits (upper part of the screen, text below) */
+const MOB={fov:30,shelfY:.022,shelfZ:.035,peek:.058};
 const SCENES=[
   {p:{x:.03,y:0,z:.04,ry:-22,rx:8,rz:-22,s:1.25,e:0},n:{x:0,y:.018,z:.0,s:1},bg:'w',word:1},
   {p:{x:.05,y:.002,z:.02,ry:84,rx:4,rz:0,s:1.15,e:0},n:{x:0,y:.026,z:-.02,s:1.0},bg:['#3a3d45','#0c0d10']},
   {p:{x:.012,y:.008,z:.035,ry:-48,rx:12,rz:-8,s:1.25,e:0},n:{x:0,y:.024,z:-.01,s:1.05},bg:['#2a2d35','#0a0b0e'],labels:1},
-  {p:{x:.0,y:-.003,z:.205,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.0,z:.17},bg:'w'},
-  {p:{x:.035,y:0,z:.04,ry:-32,rx:-22,rz:-30,s:1.25,e:0},n:{x:0,y:.02,z:0,s:1},bg:['#1d4f9e','#05132a']},
+  {p:{x:.0,y:-.003,z:.205,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.095},bg:'w'},
+  {p:{x:.035,y:0,z:.04,ry:-32,rx:-22,rz:-30,s:1.25,e:0},n:{x:0,y:.032,z:-.01,s:.95},bg:['#1d4f9e','#05132a']},
   {p:{x:.05,y:0,z:.0,ry:158,rx:6,rz:14,s:1.0,e:0},n:{x:0,y:.026,z:-.03,s:.9},bg:['#4a3b30','#120d0a']},
   {p:{x:.035,y:0,z:.05,ry:-14,rx:5,rz:-12,s:1.3,e:0},n:{x:0,y:.022,z:.0,s:1},bg:'w'},
-  {p:{x:0,y:.022,z:-.02,ry:0,rx:4,rz:0,s:1.0,e:0},n:{x:0,y:.03,z:-.04,s:.95},bg:'w',word:1}
+  {p:{x:0,y:.022,z:-.02,ry:0,rx:4,rz:0,s:1.0,e:0},n:{x:0,y:.026,z:0,s:1},bg:'w',word:1}
 ];
 const LABELS=[ /* anchors in model space (metres); side: label to the right or left of the anchor */
   {a:[.004,.012,.0047],t:'Сапфировое стекло',s:'устойчиво к царапинам',side:'r'},
@@ -496,8 +506,12 @@ LABELS.forEach(l=>{ const d=document.createElement('div'); d.className='co'+(l.s
 const shelfItems=W.map((w,i)=>({w,i,cur:{x:0,y:-.3,z:-.2,ry:w.yaw,rx:0,rz:0,s:1,e:0},sx:0,sy:0}));
 function shelfPose(it,t,narrow){
   let d=it.i-sel; if(d>N/2)d-=N; if(d<-N/2)d+=N; const ad=Math.abs(d);
-  const gap=narrow?.052:.072;
   const bob=reduce?0:Math.sin(t*.0011+it.i)*.0018, sway=reduce?0:Math.sin(t*.0006+it.i*1.7)*7;
+  if(narrow){
+    if(d===0) return {x:0,y:MOB.shelfY+bob,z:MOB.shelfZ,ry:sway*.5,rx:3,rz:-3,s:1,e:0};
+    return {x:Math.sign(d)*(MOB.peek+(ad-1)*.06),y:MOB.shelfY-.004+bob,z:-.03,ry:d*-34+sway,rx:5,rz:Math.sign(d)*-4,s:.92,e:0};
+  }
+  const gap=.072;
   if(d===0) return {x:0,y:.012+bob,z:.02,ry:sway*.6,rx:3,rz:-4,s:1.0,e:0};
   return {x:d*gap+Math.sign(d)*Math.max(0,ad-1)*.034,y:-ad*.006+bob,z:-ad*.045,ry:it.w.yaw+d*-16+sway,rx:5,rz:it.w.roll,s:.8,e:0};
 }
@@ -516,7 +530,7 @@ let proj,view,cam=[0,0,.3];
 function resize(){
   const dpr=Math.min(2,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
   canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); gl.viewport(0,0,canvas.width,canvas.height);
-  const asp=w/h, fov=(asp<.8?38:26)*toRad; proj=M4.persp(fov,asp,.01,5);
+  const asp=w/h, fov=(asp<.8?MOB.fov:26)*toRad; proj=M4.persp(fov,asp,.01,5);
   cam=[0,0,asp<.8?.36:.3]; view=M4.tr(0,0,-cam[2]);
 }
 window.addEventListener('resize',resize);
@@ -550,7 +564,9 @@ function frame(t){
   $('top').classList.toggle('dark',enter>.5);
   $('loading').style.color=enter>.5?'#f3f4f6':'#121418';
   /* scene copy fades + counters */
-  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=clamp(1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3); c.style.transform='translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
+  $('shelf-ui').style.opacity=clamp(1-(y/vh)*3,0,1).toFixed(3);
+  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.6-d*2.6:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
+    c.style.visibility=op<.01?'hidden':'visible'; c.style.transform=narrow?'translateY('+((sf-i)*-18).toFixed(1)+'px)':'translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
   counters.forEach(el=>{ const sc=+el.closest('.scene').dataset.scene; const p=clamp((sf-sc+.55)/.5,0,1); const v=+el.dataset.count*ease(p); el.textContent=(+el.dataset.dec?v.toFixed(1):Math.round(v).toString()).replace('.',','); });
   const wordOp=enter*Math.max(...SCENES.map((s,i)=>s.word?clamp(1.2-Math.abs(sf-i)*2,0,1):0));
   $('word').style.opacity=(wordOp).toFixed(3);
@@ -568,7 +584,8 @@ function frame(t){
   shelfItems.forEach(it=>{
     let tgt=shelfPose(it,t,narrow);
     if(it.i===sel){ if(inStory){ const o={}; for(const kk in tgt) o[kk]=lerp(tgt[kk],sp[kk],enter); tgt=o; } }
-    else if(enter>0){ tgt=Object.assign({},tgt,{y:lerp(tgt.y,-.25,enter),z:tgt.z-enter*.1,rx:tgt.rx+enter*40}); }
+    else if(enter>0){ tgt=narrow?Object.assign({},tgt,{x:tgt.x+Math.sign(tgt.x)*enter*.09,ry:tgt.ry+Math.sign(tgt.x)*enter*30})
+                                 :Object.assign({},tgt,{y:lerp(tgt.y,-.25,enter),z:tgt.z-enter*.1,rx:tgt.rx+enter*40}); }
     const c=it.cur; for(const kk in tgt) c[kk]+=(tgt[kk]-c[kk])*k;
     const m=model(c); const s=toScreen(m,[0,0,0]); it.sx=s[0]; it.sy=s[1]; mats.push(m);
   });
@@ -592,7 +609,7 @@ function frame(t){
   if(MESH) for(const pass of [0,1]){
     if(pass){ gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); } else { gl.disable(gl.BLEND); gl.depthMask(true); }
     shelfItems.forEach((it,ii)=>{
-      if(it.cur.y<-.2) return;
+      if(it.cur.y<-.2||Math.abs(it.cur.x)>.2) return;
       gl.uniformMatrix4fv(U.uM,false,mats[ii]); gl.uniform1f(U.uExplode,it.cur.e);
       const dv=DIAL[it.w.key];
       MESH.draws.forEach(d=>{
