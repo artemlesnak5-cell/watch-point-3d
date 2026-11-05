@@ -418,7 +418,12 @@ const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uRole','uCam','uT
 const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
   x.fillStyle='#000'; x.fillRect(0,0,512,512); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
   x.font='700 92px Georgia,"Times New Roman",serif'; x.fillText('TISSOT',256,256-3.1*34.1,400);
-  x.font='700 68px "Times New Roman",Times,"Liberation Serif",serif'; if('letterSpacing' in x) x.letterSpacing='8px'; x.fillText('1853',256,256+3*34.1,300);
+  /* year: every digit scaled to the same height on one baseline, so old-style figures of any font stand level */
+  x.font='700 80px "Times New Roman",Times,Georgia,serif'; x.textBaseline='alphabetic'; x.textAlign='left';
+  { const H=46, base=256+3*34.1+H/2, gap=10, ds=[...'1853'].map(ch=>{ const m=x.measureText(ch); const a=m.actualBoundingBoxAscent, d=m.actualBoundingBoxDescent;
+      const k=H/Math.max(1,a+d); return {ch,a,d,k,w:(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)*Math.min(k,1.15),l:m.actualBoundingBoxLeft}; });
+    let cx=256-(ds.reduce((t,o)=>t+o.w,0)+gap*(ds.length-1))/2;
+    ds.forEach(o=>{ const kx=Math.min(o.k,1.15); x.save(); x.translate(cx+o.l*kx,base); x.scale(kx,o.k); x.fillText(o.ch,0,-o.d); x.strokeStyle='#fff'; x.lineWidth=2.4; x.strokeText(o.ch,0,-o.d); x.restore(); cx+=o.w+gap; }); }
   const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,512,512,0,gl.RED,gl.UNSIGNED_BYTE,
     (()=>{ const d=x.getImageData(0,0,512,512).data, o=new Uint8Array(512*512); for(let i=0;i<o.length;i++) o[i]=d[i*4]; return o; })());
   gl.pixelStorei(gl.UNPACK_ALIGNMENT,4); gl.generateMipmap(gl.TEXTURE_2D);
