@@ -47,7 +47,7 @@ button{font:inherit;color:inherit}
 /* shelf */
 .shelf{position:relative;height:100svh;min-height:600px;color:var(--paper)}
 .shelf .pill{background:var(--paper);color:var(--ink)}
-.shelf-ui{position:absolute;left:0;right:0;bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:16px}
+.shelf-ui{position:fixed;z-index:3;left:0;right:0;bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:16px}
 .label{margin:0;font-family:var(--display);font-weight:900;font-size:clamp(22px,3vw,34px);line-height:.95;text-align:center;text-transform:uppercase}
 .label small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.2em;margin-top:10px;opacity:.7}
 .controls{display:flex;gap:12px;align-items:center}
@@ -265,7 +265,9 @@ const N=W.length, $=(id)=>document.getElementById(id);
 const canvas=$('gl'), storyEl=$('story'), shelfEl=$('shelf');
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const toRad=Math.PI/180;
-let sel=0;
+let sel=0, SFIT=null;
+if('scrollRestoration' in history) history.scrollRestoration='manual';   /* always open on the shelf */
+window.scrollTo(0,0);
 
 /* ---------- UI ---------- */
 const scenes=[...document.querySelectorAll('.scene')];
@@ -344,14 +346,14 @@ float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=norma
   float k=dot(d,z); if(k<=0.) return 0.; vec2 p=vec2(dot(d,x),dot(d,y))/k; vec2 q=abs(p)-size; return 1.-smoothstep(-soft,soft,max(q.x,q.y)); }
 vec3 env(vec3 d){
   float y=d.y;
-  vec3 c=mix(vec3(.012,.013,.016),vec3(.11,.115,.13),smoothstep(-.2,.9,y));
-  c+=vec3(.22)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
+  vec3 c=mix(vec3(.05,.053,.06),vec3(.28,.29,.32),smoothstep(-.2,.9,y));
+  c+=vec3(.34)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
   c+=vec3(9.)*box(d,vec3(.9,.25,.35),vec2(.32,.9),.12);
   c+=vec3(5.5)*box(d,vec3(-.95,.35,.2),vec2(.22,1.1),.16);
-  c+=vec3(4.)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
+  c+=vec3(1.9)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
   c+=vec3(2.5)*box(d,vec3(-.2,.15,-1.),vec2(.9,.25),.2);
   c+=vec3(1.4)*box(d,vec3(0.,.05,1.),vec2(1.4,.06),.05);
-  return c*mix(vec3(1.),uTint,uOpen*.7);
+  return c*mix(vec3(1.),uTint,uOpen*.3);
 }
 vec3 envBlur(vec3 R,vec3 N,float rough){
   float a=rough*rough; if(a<.02) return env(R);
@@ -385,7 +387,7 @@ void main(){
       float o2=smoothstep(.1,.22,t.r-t.b); t=mix(t,vec3(dot(t,vec3(.3,.59,.11))*1.15),o2);
     }
     base=pow(t,vec3(2.2));
-    if(metal>.5&&role!=1) base=mix(vec3(.56,.57,.58),base*1.9,.55);
+    if(metal>.5&&role!=1) base=mix(vec3(.64,.655,.68),base*1.9,.45);
     /* clasp cover engraving: TISSOT / 1853, read from the back of the bracelet */
     if(vMP.z<-.0433&&vMN.z<-.6&&abs(vMP.x)<.0075&&abs(vMP.y)<.0075){
       float m=texture(uEng,vec2(.5-vMP.x/.015,.5-vMP.y/.015)).r;
@@ -468,8 +470,8 @@ async function loadWPM(url){
   return {draws,pts,center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
 }
 const DIAL={
-  green:{bg:[.05,.30,.17],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.3,.3,.55]},
-  blue:{bg:[.02,.11,.36],ink:[.95,.96,.98],recolor:1,desat:1,mr:[.3,.3,.55]},
+  green:{bg:[.03,.27,.155],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.25,.3,.38]},
+  blue:{bg:[.02,.10,.34],ink:[.95,.96,.98],recolor:1,desat:1,mr:[.25,.3,.38]},
   black:{bg:[.02,.021,.024],ink:[.94,.94,.94],recolor:1,desat:1,mr:[.04,.1,.3]},
   silver:{bg:[.8,.8,.8],ink:[.2,.2,.2],recolor:0,desat:0,mr:[.15,.32,1]}
 };
@@ -506,8 +508,10 @@ function shelfPose(it,t,narrow){
   let d=it.i-sel; if(d>N/2)d-=N; if(d<-N/2)d+=N; const ad=Math.abs(d);
   const bob=reduce?0:Math.sin(t*.0011+it.i)*.0018, sway=reduce?0:Math.sin(t*.0006+it.i*1.7)*7;
   if(narrow){
-    if(d===0) return {x:0,y:MOB.shelfY+bob,z:MOB.shelfZ,ry:sway*.5,rx:3,rz:-3,s:MOB.big,e:0};
-    return {x:Math.sign(d)*(MOB.peek+(ad-1)*.06),y:MOB.shelfY-.004+bob,z:-.03,ry:d*-34+sway,rx:5,rz:Math.sign(d)*-4,s:MOB.side,e:0};
+    const F=SFIT||{x:0,y:MOB.shelfY,z:MOB.shelfZ,s:MOB.big};
+    if(d===0) return {x:F.x,y:F.y+bob,z:F.z,ry:sway*.5,rx:3,rz:-3,s:F.s,e:0};
+    const z=F.z-.03, wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-z)/canvas.clientHeight;   /* neighbours peek in from the screen edges */
+    return {x:Math.sign(d)*(innerWidth*.6+(ad-1)*innerWidth*.5)*wpp,y:F.y-.003+bob,z,ry:d*-34+sway,rx:5,rz:Math.sign(d)*-4,s:F.s*.86,e:0};
   }
   const gap=.072;
   if(d===0) return {x:0,y:.012+bob,z:.02,ry:sway*.6,rx:3,rz:-4,s:1.0,e:0};
@@ -542,8 +546,11 @@ function fitPhone(tgt,sf,w){
   if(!MESH||w<=0) return tgt;
   const si=clamp(Math.round(sf),0,scenes.length-1), cp=scenes[si].firstElementChild.getBoundingClientRect();
   const top=$('top').getBoundingClientRect().bottom+14, bot=Math.min(innerHeight-20,cp.top-22);
-  const cx=innerWidth/2, cy=(top+bot)/2, rh=Math.max(120,bot-top), rw=innerWidth-28;
   const close=clamp(1.4-Math.abs(sf-3)*1.8,0,1);           /* dial close-up: centre the dial, let the bracelet run off screen */
+  return fitRegion(tgt,top,bot,innerWidth-28,close,w);
+}
+function fitRegion(tgt,top,bot,rw,close,w){
+  const cx=innerWidth/2, cy=(top+bot)/2, rh=Math.max(120,bot-top);
   const o=Object.assign({},tgt);
   let b=screenBox(o); const f=clamp(Math.min(rh*.94/(b.y1-b.y0),rw/(b.x1-b.x0)),.6,1.6);
   o.s*=lerp(1,lerp(f,1,close),w);
@@ -581,8 +588,8 @@ function frame(t){
   $('top').classList.add('dark');
   $('loading').style.color='#f3f4f6';
   /* scene copy fades + counters */
-  $('shelf-ui').style.opacity=clamp(1-(Math.max(0,y)/vh-.06)*3.5,0,1).toFixed(3);
-  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.6-d*2.6:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
+  { const su=$('shelf-ui'), op=clamp(1-enter*3,0,1); su.style.opacity=op.toFixed(3); su.style.visibility=op<.02?'hidden':'visible'; }
+  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.8-d*3.8:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
     c.style.visibility=op<.01?'hidden':'visible'; c.style.transform=narrow?'translateY('+((sf-i)*-18).toFixed(1)+'px)':'translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
   counters.forEach(el=>{ const sc=+el.closest('.scene').dataset.scene; const p=clamp((sf-sc+.55)/.5,0,1); const v=+el.dataset.count*ease(p); el.textContent=(+el.dataset.dec?v.toFixed(1):Math.round(v).toString()).replace('.',','); });
   const wordOp=enter*Math.max(...SCENES.map((s,i)=>s.word?clamp(1.2-Math.abs(sf-i)*2,0,1):0));
@@ -597,6 +604,10 @@ function frame(t){
   if(TEX){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,TEX.a); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,TEX.m); gl.uniform1i(U.uTex,0); gl.uniform1i(U.uMR,1); }
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,ENG); gl.uniform1i(U.uEng,2);
 
+  /* phone shelf: centre watch fitted between the header and the shelf buttons */
+  SFIT=null;
+  if(narrow&&MESH){ const top=$('top').getBoundingClientRect().bottom+8, bot=$('shelf-ui').getBoundingClientRect().top-14;
+    SFIT=fitRegion({x:0,y:0,z:MOB.shelfZ,ry:0,rx:3,rz:-3,s:MOB.big,e:0},top,bot,innerWidth*.6,0,1); }
   const sp=storyPose(sf,narrow,t), mats=[];
   shelfItems.forEach(it=>{
     let tgt=shelfPose(it,t,narrow);
