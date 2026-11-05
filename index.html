@@ -325,16 +325,16 @@ if(!gl){ $('loading').textContent='ВАШ БРАУЗЕР НЕ ПОКАЗЫВАЕ
 const VS=`#version 300 es
 in vec3 aPos; in vec4 aNor; in vec2 aUv; in vec4 aExp;
 uniform mat4 uP,uV,uM; uniform vec3 uCenter; uniform float uHalf,uExpScale,uExplode; uniform vec2 uUvMap; uniform int uHasAO;
-out vec3 vW; out vec3 vN; out vec3 vMP; out vec3 vT; out vec2 vUv; out float vAO;
-void main(){ vec3 p=aPos*uHalf+uCenter; vMP=p; p+=aExp.xyz*uExpScale*uExplode;
+out vec3 vW; out vec3 vN; out vec3 vMP; out vec3 vMN; out vec3 vT; out vec2 vUv; out float vAO;
+void main(){ vec3 p=aPos*uHalf+uCenter; vMP=p; vMN=aNor.xyz; p+=aExp.xyz*uExpScale*uExplode;
   vUv=uUvMap.x+aUv*uUvMap.y; vAO=uHasAO==1?clamp(aNor.w*1.0039,0.,1.):1.; vAO=mix(vAO,1.,uExplode*.6);
   vec4 w=uM*vec4(p,1.); vW=w.xyz; vN=mat3(uM)*aNor.xyz;
   vec2 r=length(vMP.xy)>1e-5?normalize(vMP.xy):vec2(1.,0.); vT=mat3(uM)*vec3(r,0.); gl_Position=uP*uV*w; }`;
 const FS=`#version 300 es
 precision highp float;
-in vec3 vW; in vec3 vN; in vec3 vMP; in vec3 vT; in vec2 vUv; in float vAO; out vec4 o;
+in vec3 vW; in vec3 vN; in vec3 vMP; in vec3 vMN; in vec3 vT; in vec2 vUv; in float vAO; out vec4 o;
 uniform vec4 uBase; uniform float uMetal,uRough,uOpen; uniform int uRole;
-uniform sampler2D uTex,uMR; uniform int uTextured,uRecolor,uDesat; uniform vec3 uDialBg,uDialInk,uDialMR;
+uniform sampler2D uTex,uMR,uEng; uniform int uTextured,uRecolor,uDesat; uniform vec3 uDialBg,uDialInk,uDialMR;
 uniform vec3 uCam,uTint;
 const vec2 DIAL_C=vec2(.7287,.4603); const float DIAL_R=.0835; const float PI=3.14159265;
 float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=normalize(cross(vec3(0,1,0),z)); vec3 y=cross(z,x);
@@ -383,6 +383,10 @@ void main(){
     }
     base=pow(t,vec3(2.2));
     if(metal>.5&&role!=1) base=mix(vec3(.56,.57,.58),base*1.9,.55);
+    /* clasp cover engraving: TISSOT / 1853, read from the back of the bracelet */
+    if(vMP.z<-.0433&&vMN.z<-.6&&abs(vMP.x)<.0075&&abs(vMP.y)<.0075){
+      float m=texture(uEng,vec2(.5-vMP.x/.015,.5-vMP.y/.015)).r;
+      base*=1.-.5*m; rough=mix(rough,.6,m); ao*=1.-.25*m; }
   }
   float ndv=max(dot(N,V),1e-4);
   vec3 R=reflect(-V,N);
@@ -409,7 +413,17 @@ function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShade
 const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk','uEng'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+/* engraving mask for the clasp: 512px = 15 mm, groove at the middle */
+const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
+  x.fillStyle='#000'; x.fillRect(0,0,512,512); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
+  x.font='700 92px Georgia,"Times New Roman",serif'; x.fillText('TISSOT',256,256-3.1*34.1,400);
+  x.font='700 66px Georgia,"Times New Roman",serif'; if('letterSpacing' in x) x.letterSpacing='8px'; x.fillText('1853',256,256+3*34.1,300);
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,512,512,0,gl.RED,gl.UNSIGNED_BYTE,
+    (()=>{ const d=x.getImageData(0,0,512,512).data, o=new Uint8Array(512*512); for(let i=0;i<o.length;i++) o[i]=d[i*4]; return o; })());
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,4); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; })();
 const A={pos:gl.getAttribLocation(prog,'aPos'),nor:gl.getAttribLocation(prog,'aNor'),uv:gl.getAttribLocation(prog,'aUv'),exp:gl.getAttribLocation(prog,'aExp')};
 
 async function loadTex(url){
@@ -543,6 +557,7 @@ function frame(t){
   gl.uniform3fv(U.uCam,cam); gl.uniform3fv(U.uTint,tintCur); gl.uniform1f(U.uOpen,openCur);
   if(MESH){ gl.uniform3fv(U.uCenter,MESH.center); gl.uniform1f(U.uHalf,MESH.half); gl.uniform2fv(U.uUvMap,MESH.uvMap); gl.uniform1i(U.uHasAO,1); gl.uniform1f(U.uExpScale,MESH.expScale); }
   if(TEX){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,TEX.a); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,TEX.m); gl.uniform1i(U.uTex,0); gl.uniform1i(U.uMR,1); }
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,ENG); gl.uniform1i(U.uEng,2);
 
   const sp=storyPose(sf,narrow,t), mats=[];
   shelfItems.forEach(it=>{
