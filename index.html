@@ -21,7 +21,7 @@ button{font:inherit;color:inherit}
 /* fixed backdrop + canvas */
 .bg{position:fixed;inset:0;z-index:0;background:var(--night)}
 .bg i{position:absolute;inset:0;display:block}
-.bg .studio{background:radial-gradient(70% 75% at 50% 28%,var(--studio-hi) 0%,var(--studio-mid) 46%,var(--studio-lo) 100%)}
+.bg .studio{background:radial-gradient(26% 40% at 50% 36%,rgba(255,255,255,.55),rgba(255,255,255,0)),radial-gradient(70% 75% at 50% 28%,var(--studio-hi) 0%,var(--studio-mid) 46%,var(--studio-lo) 100%)}
 .bg .glow{background:radial-gradient(55% 65% at var(--gx,62%) 50%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 55%,var(--night) 100%)}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;touch-action:pan-y}
 .loading{position:fixed;inset:0;display:grid;place-items:center;font-size:13px;letter-spacing:.16em;z-index:3;pointer-events:none;color:var(--ink)}
@@ -113,7 +113,8 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
   .hint{display:none}
   .scene{align-items:flex-end;padding-bottom:calc(9vh + env(safe-area-inset-bottom,0px))}
   .scene.center{align-items:flex-end}
-  .copy{max-width:none;width:100%;padding:18px 0 0;background:linear-gradient(transparent,rgba(8,9,11,.82) 30%)}
+  .copy{max-width:none;width:100%;padding:18px 0 0}
+  .bg .glow{background:radial-gradient(70% 38% at 50% 30%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 60%,var(--night) 100%)}
   .big{font-size:84px}
   .copy h2{font-size:28px}
   .parts{display:block}
@@ -139,7 +140,6 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
 <div class="page">
   <section class="shelf" id="shelf" aria-label="Полка часов">
     <div class="lamp" aria-hidden="true"></div>
-    <div class="lamp-glow" aria-hidden="true"></div>
     <div class="shelf-ui">
       <p class="label" id="label">PRX зелёный<small>T137.410.11.091.00</small></p>
       <div class="controls">
@@ -373,7 +373,7 @@ void main(){
         float l=dot(t,vec3(.333));
         float ink=(1.-smoothstep(.42,.66,l))*smoothstep(.06,.16,l);
         float hole=1.-smoothstep(.04,.12,l);
-        vec3 bg=uDialBg*(.9+(l-.8)*1.4);
+        vec3 bg=uDialBg*(.95+(l-.8)*.9);
         t=mix(mix(bg,uDialInk,ink),vec3(.02),hole);
         metal=mix(uDialMR.x,.1,ink); rough=mix(uDialMR.y,.4,ink); dialSpec=mix(uDialMR.z,1.,ink);
       } else { metal=.15; rough=.32; }
@@ -382,7 +382,7 @@ void main(){
       float o2=smoothstep(.1,.22,t.r-t.b); t=mix(t,vec3(dot(t,vec3(.3,.59,.11))*1.15),o2);
     }
     base=pow(t,vec3(2.2));
-    if(metal>.5) base=mix(vec3(.56,.57,.58),base*1.9,.55);
+    if(metal>.5&&role!=1) base=mix(vec3(.56,.57,.58),base*1.9,.55);
   }
   float ndv=max(dot(N,V),1e-4);
   vec3 R=reflect(-V,N);
@@ -399,7 +399,7 @@ void main(){
     col+=(base*pow(an,12.)*1.6*smoothstep(.002,.006,length(vMP.xy))+F0*pow(an,30.)*1.2)*uDialMR.z; }
   float alpha=uBase.a;
   if(uRole==2){ vec3 F=vec3(.06)+(vec3(1.)-vec3(.06))*pow(1.-ndv,5.);
-    vec3 g=env(R)*F; alpha=clamp(dot(F,vec3(.333))+dot(g,vec3(.12)),.03,.85); col=g/max(alpha,.03); }
+    vec3 g=env(R)*F; alpha=clamp(dot(F,vec3(.333))*.6+dot(g,vec3(.1)),0.,.8); col=g/max(alpha,.03); }
   col*=1.05;
   col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
   col=pow(clamp(col,0.,1.),vec3(1./2.2));
@@ -443,8 +443,8 @@ async function loadWPM(url){
   return {draws,center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
 }
 const DIAL={
-  green:{bg:[.12,.35,.25],ink:[.92,.93,.9],recolor:1,desat:1,mr:[.55,.28,1]},
-  blue:{bg:[.12,.27,.55],ink:[.93,.94,.96],recolor:1,desat:1,mr:[.55,.28,1]},
+  green:{bg:[.05,.30,.17],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.3,.3,.55]},
+  blue:{bg:[.02,.11,.36],ink:[.95,.96,.98],recolor:1,desat:1,mr:[.3,.3,.55]},
   black:{bg:[.02,.021,.024],ink:[.94,.94,.94],recolor:1,desat:1,mr:[.04,.1,.3]},
   silver:{bg:[.8,.8,.8],ink:[.2,.2,.2],recolor:0,desat:0,mr:[.15,.32,1]}
 };
