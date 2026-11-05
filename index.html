@@ -467,7 +467,10 @@ async function loadWPM(url){
     const glass=g.role==='glass';
     return {vao,icount:g.icount,blend:glass,role:glass?2:0,textured:!glass,base:[1,1,1,1],metal:glass?0:1,rough:glass?.04:.3};
   });
-  return {draws,center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
+  /* ~500 sample points of the body, used to measure where the watch is on screen */
+  const g0=H.groups[0], P16=new Int16Array(buf,base+g0.pos,g0.count*3), pts=[], stp=Math.max(1,Math.floor(g0.count/500));
+  for(let v=0;v<g0.count;v+=stp) pts.push([0,1,2].map(a=>P16[v*3+a]/32767*H.half+H.center[a]));
+  return {draws,pts,center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
 }
 const DIAL={
   green:{bg:[.05,.30,.17],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.3,.3,.55]},
@@ -536,6 +539,25 @@ function resize(){
 window.addEventListener('resize',resize);
 function model(c){ let m=M4.tr(c.x,c.y,c.z); m=M4.mul(m,M4.rz(c.rz*toRad)); m=M4.mul(m,M4.ry(c.ry*toRad)); m=M4.mul(m,M4.rx(c.rx*toRad)); return M4.mul(m,M4.sc(c.s)); }
 function toScreen(m,p){ const pv=M4.mul(proj,view); const q=M4.xf(M4.mul(pv,m),p); return [(q[0]/q[3]*.5+.5)*canvas.clientWidth,(1-(q[1]/q[3]*.5+.5))*canvas.clientHeight]; }
+/* phone: put the watch exactly in the middle of the free space between the header and the text, and size it to fit */
+function screenBox(c){ const pvm=M4.mul(M4.mul(proj,view),model(c)); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; const W=canvas.clientWidth,Hh=canvas.clientHeight;
+  for(const p of MESH.pts){ const q=M4.xf(pvm,p); const sx=(q[0]/q[3]*.5+.5)*W, sy=(1-(q[1]/q[3]*.5+.5))*Hh; if(sx<x0)x0=sx; if(sx>x1)x1=sx; if(sy<y0)y0=sy; if(sy>y1)y1=sy; }
+  const o=M4.xf(pvm,[0,0,0]); return {x0,y0,x1,y1,ox:(o[0]/o[3]*.5+.5)*W,oy:(1-(o[1]/o[3]*.5+.5))*Hh}; }
+function fitPhone(tgt,sf,w){
+  if(!MESH||w<=0) return tgt;
+  const si=clamp(Math.round(sf),0,scenes.length-1), cp=scenes[si].firstElementChild.getBoundingClientRect();
+  const top=$('top').getBoundingClientRect().bottom+14, bot=Math.min(innerHeight-20,cp.top-22);
+  const cx=innerWidth/2, cy=(top+bot)/2, rh=Math.max(120,bot-top), rw=innerWidth-28;
+  const close=clamp(1.4-Math.abs(sf-3)*1.8,0,1);           /* dial close-up: centre the dial, let the bracelet run off screen */
+  const o=Object.assign({},tgt);
+  let b=screenBox(o); const f=clamp(Math.min(rh*.94/(b.y1-b.y0),rw/(b.x1-b.x0)),.6,1.6);
+  o.s*=lerp(1,lerp(f,1,close),w);
+  for(let it=0;it<2;it++){ b=screenBox(o);
+    const px=lerp((b.x0+b.x1)/2,b.ox,close), py=lerp((b.y0+b.y1)/2,b.oy,close);
+    const wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-o.z)/canvas.clientHeight;
+    o.x+=(cx-px)*wpp*w; o.y-=(cy-py)*wpp*w; }
+  return o;
+}
 function pick(e){
   let best=null,bd=1e9; shelfItems.forEach(it=>{ const d=Math.hypot(it.sx-e.clientX,it.sy-e.clientY); if(d<bd){bd=d;best=it;} });
   if(!best||bd>Math.min(160,innerWidth*.18)) return;
@@ -583,7 +605,7 @@ function frame(t){
   const sp=storyPose(sf,narrow,t), mats=[];
   shelfItems.forEach(it=>{
     let tgt=shelfPose(it,t,narrow);
-    if(it.i===sel){ if(inStory){ const o={}; for(const kk in tgt) o[kk]=lerp(tgt[kk],sp[kk],enter); tgt=o; } }
+    if(it.i===sel){ if(inStory){ const o={}; for(const kk in tgt) o[kk]=lerp(tgt[kk],sp[kk],enter); tgt=o; if(narrow) tgt=fitPhone(tgt,sf,ease(enter)*clamp((SCENES.length-.5-sf)*2,0,1)); } }
     else if(enter>0){ tgt=narrow?Object.assign({},tgt,{x:tgt.x+Math.sign(tgt.x)*enter*.09,ry:tgt.ry+Math.sign(tgt.x)*enter*30})
                                  :Object.assign({},tgt,{y:lerp(tgt.y,-.25,enter),z:tgt.z-enter*.1,rx:tgt.rx+enter*40}); }
     const c=it.cur; for(const kk in tgt) c[kk]+=(tgt[kk]-c[kk])*k;
