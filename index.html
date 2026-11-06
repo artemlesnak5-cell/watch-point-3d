@@ -324,7 +324,7 @@ const MODELS=[
    dialT:'Голубой перламутр.', dial:'Перламутр переливается при каждом повороте, накладные римские цифры ловят свет.',
    braT:'Пять рядов стали.', bra:'Полированные звенья в пять рядов, смещённые как кирпичная кладка. Браслет закрывается застёжкой-бабочкой.'}
 ];
-const FAM={prx:{story:'story-prx',word:'PRX',steps:14,zoom:1,sz:1},bell:{story:'story-bell',word:'BELLISSIMA',steps:14,zoom:1.32,sz:0.72}};
+const FAM={prx:{story:'story-prx',word:'PRX',steps:14,zoom:1,sz:1},bell:{story:'story-bell',word:'BELLISSIMA',steps:14,zoom:1.32,sz:1.32}};
 const zoomR=(r,z)=>z===1?r:{x:r.x+r.w*(1-z)/2,y:r.y+r.h*(1-z)/2,w:r.w*z,h:r.h*z};
 const SHELF_N=19, SHELF_MID=9;
 const $=(id)=>document.getElementById(id);
@@ -346,14 +346,17 @@ const META={};
 function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; if(MODELS[sel]===m) setUI();}).catch(()=>{}); } return META[m.key]; }
 const segStarts=mt=>{ if(mt.starts) return mt.starts; const st=mt.steps||14, k=Math.ceil((mt.frames-1)/st), a=[]; for(let i=0;i<=k;i++) a.push(Math.min(i*st,mt.frames-1)); return a; };
 const sceneToFrame=(mt,sc)=>{ const S=segStarts(mt); if(sc<=0) return 0; if(sc>=S.length-1) return mt.frames-1; const i=Math.floor(sc); return lerp(S[i],S[i+1],sc-i); };
-/* compressed frames are kept as blobs (small); only a window of frames around the scroll position is decoded to bitmaps */
-const STORE={}, WIN=6;
-const store=m=>STORE[m.key]||(STORE[m.key]={blobs:new Map(),bmps:new Map(),pend:new Set(),busy:new Set(),dec:0,fc:0});
+/* compressed frames are kept as blobs (small). Decoded bitmaps:
+   - "bmps": full-res window around the scroll position, biased in the direction of travel
+   - "imgs": <img> elements made from the downloaded blobs for the frames right at the playhead: if the exact frame has no decoded bitmap yet, drawing the <img> decodes it on the spot (like a plain image sequence), so the right frame is shown even on a slow device
+   - "keep": half-res backbone (every 4th frame + scene starts) that is never evicted, so the fallback frame is always within 2 frames of the target */
+const STORE={}, WIN=6, DEC_MAX=4, BB=4;
+const store=m=>STORE[m.key]||(STORE[m.key]={blobs:new Map(),bmps:new Map(),keep:new Map(),imgs:new Map(),pend:new Set(),busy:new Set(),dec:0,fc:0,lo:0,hi:0});
 let inflight=0;
 const BFM={};                       /* optional overlay sequences per model (unused now: the butterfly clasp is part of the main sequence) */
 function nextPick(m){
   const mt=META[m.key]; if(!mt||!mt.frames) return -1; const S=store(m), n=mt.frames;
-  if(!S.backbone){ const k=new Set(segStarts(mt)); for(let i=0;i<n;i+=8) k.add(i); k.add(n-1); S.backbone=[...k].sort((a,b)=>a-b); }
+  if(!S.backbone){ const k=new Set(segStarts(mt)); for(let i=0;i<n;i+=4) k.add(i); k.add(n-1); S.backbone=[...k].sort((a,b)=>a-b); }
   for(const i of S.backbone) if(!S.blobs.has(i)&&!S.busy.has(i)) return i;
   let pick=-1, bd=1e9; for(let i=0;i<n;i++) if(!S.blobs.has(i)&&!S.busy.has(i)){ const d=Math.abs(i-S.fc); if(d<bd){bd=d;pick=i;} }
   return pick;
@@ -366,25 +369,44 @@ function pump(){
     fetch('frames/'+t.key+'/'+pad(pick,3)+'.webp').then(r=>r.ok?r.blob():Promise.reject()).then(b=>{S.blobs.set(pick,b);}).catch(()=>{}).finally(()=>{S.busy.delete(pick); inflight--; pump();});
   }
 }
-function wantBitmaps(m,f){
-  const S=store(m), mt=META[m.key]; if(!mt||!mt.frames) return; const n=mt.frames, c=Math.round(f); S.fc=f;
-  for(let d=0; d<=WIN+1 && S.dec<3; d++) for(const i of (d? [c-d,c+d] : [c])){
-    if(i<0||i>=n||S.bmps.has(i)||S.pend.has(i)||!S.blobs.has(i)) continue;
-    S.pend.add(i); S.dec++;
-    createImageBitmap(S.blobs.get(i)).then(bm=>{ if(Math.abs(i-S.fc)>WIN*2+2){ bm.close(); } else S.bmps.set(i,bm); }).catch(()=>{}).finally(()=>{S.pend.delete(i); S.dec--;});
-  }
-  for(const [i,bm] of S.bmps) if(Math.abs(i-c)>WIN+4){ bm.close(); S.bmps.delete(i); }
-  if(m.fam==='bfly') return;
-  /* keep the segment starts decoded as a safety net when scrolling fast */
-  for(const i of segStarts(mt)){ if(!S.bmps.has(i)&&!S.pend.has(i)&&S.blobs.has(i)&&S.dec<3){ S.pend.add(i); S.dec++; createImageBitmap(S.blobs.get(i)).then(bm=>{S.keep=S.keep||new Map(); S.keep.set(i,bm);}).catch(()=>{}).finally(()=>{S.pend.delete(i); S.dec--;}); } }
+function startDecode(S,mt,i,half){
+  const key=(half?'k':'f')+i; S.pend.add(key); S.dec++;
+  const opt=half&&mt.w&&mt.h?{resizeWidth:Math.round(mt.w/2),resizeHeight:Math.round(mt.h/2),resizeQuality:'medium'}:undefined;
+  createImageBitmap(S.blobs.get(i),opt).then(bm=>{
+    if(half){ if(S.keep.has(i)) bm.close(); else S.keep.set(i,bm); }
+    else if(i<S.lo-3||i>S.hi+3||S.bmps.has(i)) bm.close(); else S.bmps.set(i,bm);
+  }).catch(()=>{}).finally(()=>{S.pend.delete(key); S.dec--;});
+}
+function backboneNeed(S,mt,c){
+  const n=mt.frames; if(!S.bb){ const k=new Set(segStarts(mt)); for(let i=0;i<n;i+=BB) k.add(i); k.add(n-1); S.bb=[...k]; }
+  return S.bb.filter(i=>!S.keep.has(i)&&!S.pend.has('k'+i)&&S.blobs.has(i)).sort((a,b)=>Math.abs(a-c)-Math.abs(b-c));
+}
+/* decode the backbone as soon as it has downloaded, even while the shelf is still showing */
+function warm(m){ const S=store(m), mt=META[m.key]; if(!mt||!mt.frames) return;
+  for(const i of backboneNeed(S,mt,Math.round(S.fc))){ if(S.dec>=2) break; startDecode(S,mt,i,true); } }
+/* f: current frame position, v: smoothed signed frames per animation frame (direction of travel) */
+function wantBitmaps(m,f,v){
+  const S=store(m), mt=META[m.key]; if(!mt||!mt.frames) return; v=v||0; const n=mt.frames, c=Math.round(f), dir=v>0.04?1:v<-0.04?-1:0;
+  const lead=clamp(Math.round(v*10),-10,10); S.fc=f; S.lo=c-WIN+Math.min(0,lead); S.hi=c+WIN+Math.max(0,lead);
+  for(const [i,bm] of S.bmps) if(i<S.lo-3||i>S.hi+3){ bm.close(); S.bmps.delete(i); }
+  for(let d=-2; d<=3; d++){ const i=c+(dir>=0?d:-d); if(i>=0&&i<n&&S.blobs.has(i)&&!S.imgs.has(i)){ const im=new Image(); im.decoding='sync'; im.src=URL.createObjectURL(S.blobs.get(i)); S.imgs.set(i,im); } }
+  for(const [i,im] of S.imgs) if(Math.abs(i-c)>WIN+12){ URL.revokeObjectURL(im.src); S.imgs.delete(i); }
+  const windowDecodes=(cap)=>{
+    if(S.dec>=cap) return; const cand=[]; for(let i=Math.max(0,S.lo);i<=Math.min(n-1,S.hi);i++){ if(S.bmps.has(i)||S.pend.has('f'+i)||!S.blobs.has(i)) continue;
+      const d=i-c, ad=Math.abs(d); cand.push([dir===0||d*dir>=0?ad:ad*2+1,i]); }
+    cand.sort((a,b)=>a[0]-b[0]); for(const [,i] of cand){ if(S.dec>=cap) break; startDecode(S,mt,i,false); } };
+  windowDecodes(DEC_MAX-1);                                         /* one slot is always left for the backbone */
+  if(S.dec<DEC_MAX) for(const i of backboneNeed(S,mt,c)){ if(S.dec>=DEC_MAX) break; startDecode(S,mt,i,true); }
+  windowDecodes(DEC_MAX);
 }
 function releaseOthers(m){
-  for(const k in STORE) if(k!==m.key&&!(BFM[m.key]&&k===BFM[m.key].key)){ const o=STORE[k]; for(const bm of o.bmps.values()) bm.close(); o.bmps.clear(); if(o.keep){ for(const bm of o.keep.values()) bm.close(); o.keep=null; } }
+  for(const k in STORE) if(k!==m.key&&!(BFM[m.key]&&k===BFM[m.key].key)){ const o=STORE[k]; for(const bm of o.bmps.values()) bm.close(); o.bmps.clear(); for(const bm of o.keep.values()) bm.close(); o.keep.clear(); for(const im of o.imgs.values()) URL.revokeObjectURL(im.src); o.imgs.clear(); }
 }
 function queueStory(m){ pump(); }
 MODELS.forEach(m=>{ for(let j=0;j<SHELF_N;j+=2) img(shelfURL(m,j)); img(shelfURL(m,SHELF_MID),true); meta(m); if(BFM[m.key]) meta(BFM[m.key]); });
+function exactFrame(m,i){ const S=store(m), bm=S.bmps.get(i); if(bm) return bm; const im=S.imgs.get(i); return im&&im.complete&&im.naturalWidth>0?im:null; }
 function nearestFrame(m,f){ const S=store(m), n=(META[m.key]||{}).frames||1; const i0=clamp(Math.round(f),0,n-1);
-  for(let d=0;d<n;d++){ for(const i of [i0-d,i0+d]){ if(i<0||i>=n) continue; const bm=S.bmps.get(i)||(S.keep&&S.keep.get(i)); if(bm) return bm; } } return null; }
+  for(let d=0;d<n;d++){ for(const i of [i0-d,i0+d]){ if(i<0||i>=n) continue; const bm=S.bmps.get(i)||S.keep.get(i); if(bm) return bm; } } return null; }
 function shelfImg(m,j){ j=clamp(Math.round(j),0,SHELF_N-1); for(let d=0;d<SHELF_N;d++){ for(const k of [j-d,j+d]){ if(k<0||k>=SHELF_N) continue; const im=cache.get(shelfURL(m,k))||img(shelfURL(m,k)); if(ok(im)) return im; } } return null; }
 
 /* ---------- UI ---------- */
@@ -473,13 +495,13 @@ function shelfLayout(t){
       h=Math.min(bot-top,vw*1.3)*(d===0?1.08:0.78); cx=vw/2+d*vw*0.66; cy=(top+bot)/2+(d===0?0:10); alpha=ad>1?0:1; }
     else { h=vh*(d===0?0.86:0.6); cx=vw/2+d*Math.min(vw*0.25,420); cy=vh*(d===0?0.44:0.47); alpha=ad>2?0:1; }
     yaw=SHELF_MID+(d===0?sway:-Math.sign(d)*5+sway*0.5);
-    const zf=FAM[MODELS[i].fam].sz; h*=zf; cy+=narrow?0:(zf-1)*h*0.04;  /* true scale: Bellissima 26 mm vs PRX 40 mm (frames are framed per model) */
+    const zf=FAM[MODELS[i].fam].sz; h*=zf; cy+=narrow?0:(zf-1)*h*0.04;  /* Bellissima frames are framed wider (whole bracelet loop): scale up so the case looks as big as a PRX */
     items.push({i,d,ad,h,w:h*0.75,cx,cy,yaw,alpha});
   }
   return items;
 }
 const glowEl=$('bg-glow'), wordEl=$('word'), loadEl=$('loading'), shelfUI=$('shelf-ui');
-let cur=null, sfS=0, last=0, shelfRect=null, frameN=0, fPrev=0, fW=0, releaseM=null;
+let cur=null, sfS=0, last=0, shelfRect=null, frameN=0, fPrev=0, fW=0, fV=0, releaseM=null;
 const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function frame(t){
   requestAnimationFrame(frame);
@@ -502,20 +524,20 @@ function frame(t){
   }
   /* story frames (cross-fade between neighbours) */
   if(enter>0&&nf>1){
-    const fT=sceneToFrame(mt,sfS), vel=Math.abs(fT-fPrev); fPrev=fT; fW=lerp(fW,clamp(vel/0.15,0,1),0.25);
+    const fT=sceneToFrame(mt,sfS), dF=fT-fPrev, vel=Math.abs(dF); fPrev=fT; fW=lerp(fW,clamp(vel/0.15,0,1),0.25); fV=lerp(fV,dF,0.3);
     const f=lerp(Math.round(fT),fT,fW), f0=Math.floor(f), fr=f-f0;   /* blend neighbours only while moving; at rest show one crisp frame */
     if(frameN===0||releaseM!==m){ releaseM=m; releaseOthers(m); }
-    wantBitmaps(m,f); if((frameN++&15)===0) pump();
+    wantBitmaps(m,f,fV); if((frameN++&15)===0) pump();
     const r1=stageRectZ(sfS), r0=shelfRect||r1; const r=enter<1?{x:lerp(r0.x,r1.x,e),y:lerp(r0.y,r1.y,e),w:lerp(r0.w,r1.w,e),h:lerp(r0.h,r1.h,e)}:r1;
     const a=sstep(0.28,0.58,enter);
     /* open-clasp overlay (Bellissima, scene 5): the clasp sequence dissolves in over the back view */
     const bm_=BFM[m.key], bmt=bm_&&META[bm_.key], wB=bm_&&bmt&&bmt.frames>1?sstep(4.45,4.85,sfS)*(1-sstep(5.15,5.55,sfS)):0;
-    const A=nearestFrame(m,f0), B=nearestFrame(m,Math.min(f0+1,nf-1));
+    const A0=exactFrame(m,f0), A=A0||nearestFrame(m,f0), B=A0?exactFrame(m,Math.min(f0+1,nf-1)):null;   /* blend only between two exact neighbours */
     drawFeathered(A,B,fr,r,a*(1-wB));
     if(wB>0.003){ const fb=clamp((sfS-4.5)/1.0,0,1)*(bmt.frames-1), g0=Math.floor(fb); wantBitmaps(bm_,fb);
       drawFeathered(nearestFrame(bm_,g0),nearestFrame(bm_,Math.min(g0+1,bmt.frames-1)),fb-g0,r,a*wB); }
     loadEl.hidden=!!A||enter<0.5;
-  } else loadEl.hidden=!!shelfImg(m,SHELF_MID);
+  } else { loadEl.hidden=!!shelfImg(m,SHELF_MID); if((frameN++&7)===0) warm(m); }
   /* page chrome */
   shelfUI.style.opacity=clamp(1-enter*3,0,1).toFixed(3); shelfUI.style.visibility=enter>0.33?'hidden':'visible';
   const g=m.glow, dp=m.deep; if(glowEl._g!==g){ glowEl._g=g; glowEl.style.setProperty('--g1',g); glowEl.style.setProperty('--g2',dp); }
