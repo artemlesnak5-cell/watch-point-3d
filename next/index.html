@@ -381,13 +381,16 @@ canvas.addEventListener('touchend',e=>{ if(!tch) return; const q=e.changedTouche
   else if(Math.hypot(dx,dy)<8&&dt<350) pick(q); },{passive:true});
 
 /* ---------- layout ---------- */
-let resScale=1;   /* adaptive render resolution: drops on slow GPUs, recovers when frames are cheap */
-function setRes(){ const dpr=Math.min(2,window.devicePixelRatio||1)*resScale; const w=Math.round(vw*dpr), h=Math.round(vh*dpr);
+let resScale=1;   /* render resolution: native by default; lowered only if the GPU is clearly struggling (<~22 fps over 2+ s), never during loading */
+const DPR_CAP=3;
+function setRes(){ const dpr=Math.min(DPR_CAP,window.devicePixelRatio||1)*resScale; const w=Math.round(vw*dpr), h=Math.round(vh*dpr);
   if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; } if(gl) gl.viewport(0,0,canvas.width,canvas.height); }
-let fEma=16, fCnt=0;
-function adapt(dt){ if(navigator.webdriver||DBG||document.hidden) return; fEma+=(dt-fEma)*.06; if(++fCnt<45) return;
-  if(fEma>27&&resScale>.55){ resScale=Math.max(.55,resScale*.86); setRes(); fCnt=0; fEma=18; }
-  else if(fEma<14.5&&resScale<1){ resScale=Math.min(1,resScale*1.08); setRes(); fCnt=-60; } }
+let fAcc=0, fN=0, fHold=0;
+function adapt(dt,now,ready){
+  if(navigator.webdriver||DBG||document.hidden||!ready||now<fHold||dt>250){ fAcc=0; fN=0; return; }
+  fAcc+=dt; if(++fN<120) return; const avg=fAcc/fN; fAcc=0; fN=0;
+  if(avg>45&&resScale>.7){ resScale=Math.max(.7,resScale*.88); setRes(); fHold=now+4000; }
+}
 let vw=innerWidth, vh=innerHeight, narrow=false, storyTop=0, centres=[], proj, view, cam=[0,0,.3];
 function measure(){
   vw=innerWidth; vh=innerHeight; narrow=vw<720;
@@ -434,27 +437,8 @@ uniform vec4 uBase; uniform float uMetal,uRough,uOpen,uExp; uniform int uRole;
 uniform sampler2D uTex,uMR,uEng,uEngB,uDT,uDM; uniform int uTextured,uRecolor,uDesat; uniform vec3 uDialBg,uDialInk,uDialMR;
 uniform vec3 uCam,uTint; uniform mat4 uM; uniform vec2 uMid; uniform float uDMK,uDG,uDA;
 const vec2 DIAL_C=vec2(.7287,.4603); const float DIAL_R=.0835; const float PI=3.14159265;
-float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=normalize(cross(vec3(0,1,0),z)); vec3 y=cross(z,x);
-  float k=dot(d,z); if(k<=0.) return 0.; vec2 p=vec2(dot(d,x),dot(d,y))/k; vec2 q=abs(p)-size; return 1.-smoothstep(-soft,soft,max(q.x,q.y)); }
-vec3 env(vec3 d){
-  float y=d.y;
-  vec3 c=mix(vec3(.05,.053,.06),vec3(.28,.29,.32),smoothstep(-.2,.9,y));
-  c+=vec3(.34)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
-  c+=vec3(9.)*box(d,vec3(.9,.25,.35),vec2(.32,.9),.12);
-  c+=vec3(5.5)*box(d,vec3(-.95,.35,.2),vec2(.22,1.1),.16);
-  c+=vec3(1.9)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
-  c+=vec3(2.5)*box(d,vec3(-.2,.15,-1.),vec2(.9,.25),.2);
-  c+=vec3(1.4)*box(d,vec3(0.,.05,1.),vec2(1.4,.06),.05);
-  return c*mix(vec3(1.),uTint,uOpen*.3);
-}
-vec3 envBlur(vec3 R,vec3 N,float rough){
-  float a=rough*rough; if(a<.02) return env(R);
-  vec3 up=abs(R.y)<.95?vec3(0,1,0):vec3(1,0,0); vec3 t=normalize(cross(up,R)); vec3 b=cross(R,t);
-  vec3 acc=vec3(0.); float w=0.; float spread=clamp(a*1.6,0.,1.2);
-  for(int i=0;i<12;i++){ float fi=float(i); float ang=fi*2.39996; float r=sqrt((fi+.5)/12.)*spread;
-    vec3 d=normalize(R+(t*cos(ang)+b*sin(ang))*r); float ww=max(dot(d,N),0.)+.05; acc+=env(d)*ww; w+=ww; }
-  return acc/w;
-}
+uniform samplerCube uEnvC;
+vec3 envLod(vec3 d,float lod){ vec4 c=textureLod(uEnvC,d,lod); return c.rgb*c.a*16.*mix(vec3(1.),uTint,uOpen*.3); }
 vec2 envBRDF(float ndv,float rough){ vec4 c0=vec4(-1.,-.0275,-.572,.022), c1=vec4(1.,.0425,1.04,-.04); vec4 r=rough*c0+c1;
   float a004=min(r.x*r.x,exp2(-9.28*ndv))*r.x+r.y; return vec2(-1.04,1.04)*a004+r.zw; }
 float D_GGX(float nh,float a){ float a2=a*a; float d=nh*nh*(a2-1.)+1.; return a2/(PI*d*d); }
@@ -497,12 +481,14 @@ void main(){
     float E=vMN.z<-.9?texture(uEngB,vec2(.5-vMP.x/.0124,.5-vMP.y/.0166)).g:0.;
     base=mix(base,vec3(.66,.66,.68),E); metal=1.-E*.75; rough=.14+E*.4;
   }
+  { vec3 dx=dFdx(N), dy=dFdy(N); float variance=.25*(dot(dx,dx)+dot(dy,dy)); rough=sqrt(clamp(rough*rough+min(2.*variance,.18),0.,1.)); }
+  if(uRole!=2) rough=max(rough,.13);
   float ndv=max(dot(N,V),1e-4);
   vec3 R=reflect(-V,N);
   vec3 F0=mix(vec3(.04),base,metal);
   vec2 ab=envBRDF(ndv,rough);
-  vec3 spec=envBlur(R,N,rough)*(F0*ab.x+ab.y);
-  vec3 diff=base*(1.-metal)*(envBlur(N,N,1.)*.9+(role==3?uDA:0.));
+  vec3 spec=envLod(R,rough*5.)*(F0*ab.x+ab.y);
+  vec3 diff=base*(1.-metal)*(envLod(N,5.)*.9+(role==3?uDA:0.));
   vec3 L=normalize(vec3(.9,.25,.35)); vec3 H=normalize(L+V); float nl=max(dot(N,L),0.);
   float a=max(rough*rough,.02); vec3 Fk=F0+(1.-F0)*pow(1.-max(dot(H,V),0.),5.);
   vec3 key=D_GGX(max(dot(N,H),0.),a)*Fk*nl*.25/max(4.*ndv*nl,.05)*1.2;
@@ -512,7 +498,7 @@ void main(){
     col+=(base*pow(an,12.)*1.6*smoothstep(.002,.006,length(vMP.xy))+F0*pow(an,30.)*1.2)*uDialMR.z; }
   float alpha=uBase.a;
   if(uRole==2){ vec3 F=vec3(.06)+(vec3(1.)-vec3(.06))*pow(1.-ndv,5.);
-    vec3 g=env(R)*F; alpha=clamp(dot(F,vec3(.333))*.6+dot(g,vec3(.1)),0.,.8); col=g/max(alpha,.03); }
+    vec3 g=envLod(R,0.)*F; alpha=clamp(dot(F,vec3(.333))*.6+dot(g,vec3(.1)),0.,.8); col=g/max(alpha,.03); }
   if(role==3) col*=uDG;
   col*=uExp;
   col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
@@ -523,7 +509,7 @@ function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShade
 const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uExp','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk','uEng','uEngB','uDT','uDM','uMid','uDMK','uDG','uDA'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uExp','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk','uEng','uEngB','uDT','uDM','uMid','uDMK','uDG','uDA','uEnvC'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 /* engraving mask for the PRX clasp: 512px = 15 mm, groove at the middle */
 const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
   x.fillStyle='#000'; x.fillRect(0,0,512,512); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
@@ -539,6 +525,50 @@ const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512;
   gl.pixelStorei(gl.UNPACK_ALIGNMENT,4); gl.generateMipmap(gl.TEXTURE_2D);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; })();
+/* prefiltered studio environment: a cube map whose mip k holds the studio softboxes blurred for roughness k/5 (RGBM8). Baked once on the GPU. */
+const ENV_LEVELS=6, ENV_SIZE=128;
+const BAKE_FS=`#version 300 es
+precision highp float;
+uniform int uFace,uNS; uniform float uSize,uSpread; out vec4 o;
+float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=normalize(cross(vec3(0,1,0),z)); vec3 y=cross(z,x);
+  float k=dot(d,z); if(k<=0.) return 0.; vec2 p=vec2(dot(d,x),dot(d,y))/k; vec2 q=abs(p)-size; return 1.-smoothstep(-soft,soft,max(q.x,q.y)); }
+vec3 env0(vec3 d){
+  float y=d.y;
+  vec3 c=mix(vec3(.05,.053,.06),vec3(.28,.29,.32),smoothstep(-.2,.9,y));
+  c+=vec3(.34)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
+  c+=vec3(9.)*box(d,vec3(.9,.25,.35),vec2(.32,.9),.12);
+  c+=vec3(5.5)*box(d,vec3(-.95,.35,.2),vec2(.22,1.1),.16);
+  c+=vec3(1.9)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
+  c+=vec3(2.5)*box(d,vec3(-.2,.15,-1.),vec2(.9,.25),.2);
+  c+=vec3(1.4)*box(d,vec3(0.,.05,1.),vec2(1.4,.06),.05);
+  return c;
+}
+
+vec3 faceDir(int f,vec2 st){ float s=st.x,t=st.y; if(f==0) return vec3(1.,-t,-s); if(f==1) return vec3(-1.,-t,s); if(f==2) return vec3(s,1.,t); if(f==3) return vec3(s,-1.,-t); if(f==4) return vec3(s,-t,1.); return vec3(-s,-t,-1.); }
+void main(){
+  vec2 st=(gl_FragCoord.xy/uSize)*2.-1.; vec3 R=normalize(faceDir(uFace,st)); vec3 acc=vec3(0.);
+  if(uNS<=1) acc=env0(R);
+  else { vec3 up=abs(R.y)<.95?vec3(0,1,0):vec3(1,0,0); vec3 t=normalize(cross(up,R)); vec3 b=cross(R,t); float w=0.;
+    for(int i=0;i<160;i++){ if(i>=uNS) break; float fi=float(i); float ang=fi*2.39996; float r=sqrt((fi+.5)/float(uNS))*uSpread;
+      vec3 d=normalize(R+(t*cos(ang)+b*sin(ang))*r); acc+=env0(d); w+=1.; }
+    acc/=w; }
+  float m=clamp(max(max(acc.r,acc.g),max(acc.b,1e-5))/16.,1./255.,1.); m=ceil(m*255.)/255.; o=vec4(acc/(m*16.),m);
+}`;
+const ENVTEX=(()=>{
+  const bp=gl.createProgram(); gl.attachShader(bp,sh(gl.VERTEX_SHADER,`#version 300 es\nvoid main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2)); gl_Position=vec4(p*2.-1.,0.,1.); }`)); gl.attachShader(bp,sh(gl.FRAGMENT_SHADER,BAKE_FS)); gl.linkProgram(bp);
+  if(!gl.getProgramParameter(bp,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(bp));
+  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_CUBE_MAP,tex); gl.texStorage2D(gl.TEXTURE_CUBE_MAP,ENV_LEVELS,gl.RGBA8,ENV_SIZE,ENV_SIZE);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_CUBE_MAP,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const fb=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,fb); gl.useProgram(bp);
+  const L=n=>gl.getUniformLocation(bp,n), NS=[1,40,56,72,96,96];
+  for(let lv=0;lv<ENV_LEVELS;lv++){ const sz=ENV_SIZE>>lv, r=lv/(ENV_LEVELS-1), spread=Math.min(1.2,1.6*r*r); gl.viewport(0,0,sz,sz);
+    gl.uniform1f(L('uSize'),sz); gl.uniform1f(L('uSpread'),spread); gl.uniform1i(L('uNS'),NS[lv]);
+    for(let f=0;f<6;f++){ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_CUBE_MAP_POSITIVE_X+f,tex,lv); gl.uniform1i(L('uFace'),f); gl.drawArrays(gl.TRIANGLES,0,3); } }
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.deleteFramebuffer(fb); gl.deleteProgram(bp); gl.useProgram(prog);
+  gl.viewport(0,0,canvas.width||1,canvas.height||1);
+  return tex;
+})();
 const A={pos:gl.getAttribLocation(prog,'aPos'),nor:gl.getAttribLocation(prog,'aNor'),uv:gl.getAttribLocation(prog,'aUv'),exp:gl.getAttribLocation(prog,'aExp')};
 
 async function loadTex(url,clamp_){
@@ -717,7 +747,7 @@ function sfOf(y,vh){
 }
 function frame(t){
   requestAnimationFrame(frame);
-  const rdt=t-prevT; const dt=Math.min(DBG&&DBG.fast?1500:64,rdt); prevT=t; adapt(rdt); const k=1-Math.pow(.0018,dt/1000*1.6);
+  const rdt=t-prevT; const dt=Math.min(DBG&&DBG.fast?1500:64,rdt); prevT=t; adapt(rdt,t,!!assetOf(MODELS[sel])&&t>9000); const k=1-Math.pow(.0018,dt/1000*1.6);
   const y=window.scrollY, m0=MODELS[sel], SC=SCENES[m0.fam];
   const enter=clamp((y-storyTop+vh*.85)/(vh*.85),0,1);                 /* 0 on the shelf, 1 inside the story */
   const sf=sfOf(y,vh);                                                 /* 0 = first scene centred, 1 = second, … */
@@ -782,6 +812,7 @@ function frame(t){
       gl.uniform3fv(U.uCenter,ms.center); gl.uniform1f(U.uHalf,ms.half); gl.uniform2fv(U.uUvMap,ms.uvMap); gl.uniform1i(U.uHasAO,1); gl.uniform1f(U.uExpScale,ms.expScale);
       gl.uniform1f(U.uExp,bell?BELL_EXP:1.05); gl.uniform1f(U.uDG,bell&&DBG&&DBG.dg!=null?DBG.dg:(bell?1:1)); gl.uniform1f(U.uDA,DBG&&DBG.da!=null?DBG.da:.75);
       gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,ENG); gl.uniform1i(U.uEng,2);
+      gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_CUBE_MAP,ENVTEX); gl.uniform1i(U.uEnvC,6);
       if(bell){ gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,as.eb); gl.uniform1i(U.uEngB,3);
         gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D,as.tex.dt); gl.uniform1i(U.uDT,4);
         gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D,as.tex.dm); gl.uniform1i(U.uDM,5); gl.uniform2fv(U.uMid,BELL_MID[it.m.mk]); gl.uniform1f(U.uDMK,DBG&&DBG.dmk!=null?DBG.dmk:(it.m.mk==='b22'?.2:1)); }
