@@ -336,7 +336,7 @@ const pad=(n,k)=>String(n).padStart(k,'0');
 const shelfURL=(m,j)=>'frames/shelf/'+m.key+'-'+pad(j,2)+'.webp';
 const frameURL=(m,i)=>'frames/'+m.key+'/'+pad(i,3)+'.webp';
 const META={};
-function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; queueStory(m);}).catch(()=>{}); } return META[m.key]; }
+function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; if(MODELS[sel]===m) queueStory(m);}).catch(()=>{}); } return META[m.key]; }
 let storyQueue=[];
 function queueStory(m){ const mt=META[m.key]; if(!mt||!mt.frames) return; const st=mt.steps||14, n=mt.frames, order=[];
   for(let i=0;i<n;i+=st) order.push(i); for(let s=Math.floor(st/2);s>=1;s=Math.floor(s/2)) for(let i=0;i<n;i+=s) if(!order.includes(i)) order.push(i); for(let i=0;i<n;i++) if(!order.includes(i)) order.push(i);
