@@ -1,0 +1,807 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Часы Tissot PRX и Bellissima в 3D: полка, анатомия и характеристики. Личный некоммерческий проект Watch Point.">
+<title>Watch Point</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: one fixed 3D canvas behind the page. Shelf (studio grey) → scroll story in the dark, Ultra-style: one watch moves through every scene. */
+:root{
+  --studio-hi:#eef0f3; --studio-mid:#bfc3ca; --studio-lo:#7d828c;
+  --ink:#121418; --night:#08090b; --paper:#f3f4f6; --muted:#a9adb5; --line:#26282d;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--paper)}
+body{font-family:var(--body);font-size:16px;line-height:1.55;margin:0}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+
+/* fixed backdrop + canvas */
+.bg{position:fixed;inset:0;z-index:0;background:var(--night)}
+.bg i{position:absolute;inset:0;display:block}
+.bg .glow{background:radial-gradient(55% 65% at var(--gx,50%) 50%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 55%,var(--night) 100%)}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;touch-action:pan-y}
+.loading{position:fixed;inset:0;display:grid;place-items:center;font-size:13px;letter-spacing:.16em;z-index:3;pointer-events:none;color:var(--paper)}
+.loading[hidden]{display:none}
+.page{position:relative;z-index:2;pointer-events:none}
+.page a,.page button,.page [data-live]{pointer-events:auto}
+
+.top{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:10px;
+  padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));
+  color:var(--ink);transition:color .5s;pointer-events:none}
+.top>*{pointer-events:auto}
+.top.dark{color:var(--paper)}
+.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:3px}
+.brand b{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.04em}
+.brand span{font-size:10px;letter-spacing:.24em;opacity:.75}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;text-decoration:none;
+  font-weight:600;font-size:14px;background:var(--ink);color:var(--paper);border:0;cursor:pointer;transition:background .5s,color .5s}
+.top.dark .pill{background:var(--paper);color:var(--ink)}
+.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:48px;padding:0 18px;border-radius:999px;
+  border:1px solid currentColor;background:transparent;cursor:pointer;font-weight:600;font-size:15px}
+
+/* shelf */
+.shelf{position:relative;height:100svh;min-height:600px;color:var(--paper)}
+.shelf .pill{background:var(--paper);color:var(--ink)}
+.shelf-ui{position:fixed;z-index:3;left:0;right:0;bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:16px}
+.label{margin:0;font-family:var(--display);font-weight:900;font-size:clamp(22px,3vw,34px);line-height:.95;text-align:center;text-transform:uppercase}
+.label small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.2em;margin-top:10px;opacity:.7}
+.controls{display:flex;gap:12px;align-items:center}
+.hint{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(40px + env(safe-area-inset-bottom,0px));font-size:11px;letter-spacing:.16em;opacity:.65}
+
+/* story */
+.story{position:relative}
+.scene{position:relative;min-height:100svh;display:flex;align-items:center;
+  padding-left:max(6%,env(safe-area-inset-left,0px));padding-right:max(6%,env(safe-area-inset-right,0px))}
+.copy{max-width:min(420px,40vw);display:flex;flex-direction:column;gap:14px;will-change:opacity,transform}
+.scene.center{justify-content:center;text-align:center}
+.scene.center .copy{max-width:640px;align-items:center}
+.scene.low{align-items:flex-end;padding-bottom:12vh}
+.eyebrow{font-size:12px;letter-spacing:.22em;opacity:.8;text-transform:uppercase}
+.copy h2{margin:0;font-family:var(--display);font-weight:900;font-size:clamp(30px,3.6vw,50px);line-height:1.02;letter-spacing:-.025em;text-wrap:balance}
+.copy p{margin:0;color:#c4c8cf;max-width:38ch}
+.big{font-family:var(--display);font-weight:900;font-size:clamp(96px,13vw,200px);line-height:.85;letter-spacing:-.05em;display:flex;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.big small{font-family:var(--body);font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:0;color:var(--muted)}
+.word{position:fixed;left:0;right:0;top:12%;z-index:1;text-align:center;font-family:var(--display);font-weight:900;
+  font-size:clamp(150px,27vw,420px);letter-spacing:-.04em;line-height:.85;color:rgba(255,255,255,.07);pointer-events:none;white-space:nowrap;opacity:0}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px 0 8px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.04);cursor:pointer;font-size:14px}
+.sw i{width:28px;height:28px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.sw[aria-pressed="true"]{border-color:var(--paper);background:rgba(255,255,255,.1)}
+.parts{margin:6px 0 0;padding:0;list-style:none;display:none;columns:2;column-gap:20px;font-size:14px;color:#c4c8cf}
+.parts li{padding:3px 0;break-inside:avoid}
+
+/* anatomy callouts */
+.callouts{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0}
+.callouts svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.callouts svg line,.callouts svg polyline{stroke:rgba(243,244,246,.65);stroke-width:1;fill:none}
+.callouts svg circle{fill:#f3f4f6;stroke:rgba(243,244,246,.25);stroke-width:6}
+.co{position:absolute;left:0;top:0;padding:7px 12px;border-radius:10px;background:rgba(8,9,11,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;flex-direction:column;line-height:1.25;white-space:nowrap;font-size:13px;color:var(--paper);will-change:transform}
+.co b{font-weight:600}
+.co span{font-size:11px;color:var(--muted)}
+.co.left{text-align:right}
+
+/* closing */
+.closing{position:relative;background:var(--night);pointer-events:auto}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.specs{padding-block:90px 20px}
+.specs h2{margin:0 0 28px;font-family:var(--display);font-weight:900;font-size:clamp(32px,4vw,52px);letter-spacing:-.03em}
+.tbl{overflow-x:auto}
+table{width:100%;min-width:560px;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:15px 12px 15px 0;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-family:var(--display);font-weight:700;font-size:16px}
+tbody th{color:var(--muted);font-weight:500}
+.src{font-size:12px;color:var(--muted);margin:16px 0 0}
+.author{padding-block:70px 90px}
+.card{border:1px solid var(--line);border-radius:28px;padding:44px;display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between}
+.card h2{margin:10px 0;font-family:var(--display);font-weight:900;font-size:clamp(28px,3.4vw,44px);line-height:1.04;letter-spacing:-.03em}
+.card p{margin:0;color:var(--muted)}
+.tg{display:inline-flex;align-items:center;gap:10px;min-height:58px;padding:0 28px;border-radius:999px;background:var(--paper);color:var(--night);text-decoration:none;font-weight:600;font-size:17px}
+footer{border-top:1px solid #1b1c20;padding-block:24px 32px;text-align:center}
+footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
+
+@media (max-width:720px){
+  .hint{display:none}
+  .scene{min-height:110svh}
+  .copy{position:fixed;left:max(20px,env(safe-area-inset-left,0px));right:max(20px,env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));max-width:none;gap:10px;pointer-events:auto}
+  .scene.center .copy{align-items:center;text-align:center}
+  .copy p{font-size:15px;line-height:1.45}
+  .bg .glow{background:radial-gradient(70% 38% at 50% 30%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 60%,var(--night) 100%)}
+  .big{font-size:84px}
+  .copy h2{font-size:28px}
+  .parts{display:block}
+  .callouts{display:none}
+  .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .card{padding:28px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.story[hidden]{display:none}
+</style>
+</head><body>
+
+<div class="bg" aria-hidden="true"><i class="glow" id="bg-glow"></i></div>
+<canvas id="stage" aria-label="Часы Tissot в 3D"></canvas>
+<div class="loading" id="loading">ЗАГРУЖАЕМ ЧАСЫ…</div>
+<div class="word" id="word" aria-hidden="true">PRX</div>
+<div class="callouts" id="callouts" aria-hidden="true"></div>
+
+<header class="top dark" id="top">
+  <button class="brand" type="button" id="home"><b>WATCH POINT</b><span>ЧАСЫ TISSOT</span></button>
+  <a class="pill" href="https://t.me/watchpoint_manager" target="_blank" rel="noopener">Telegram автора <span aria-hidden="true">↗</span></a>
+</header>
+
+<div class="page">
+  <section class="shelf" id="shelf" aria-label="Полка часов">
+    <div class="shelf-ui" id="shelf-ui">
+      <p class="label" id="label">PRX зелёный<small>T137.410.11.091.00</small></p>
+      <div class="controls">
+        <button class="ghost" type="button" id="prev" aria-label="Предыдущие часы">←</button>
+        <button class="pill" type="button" id="open">Смотреть разбор ↓</button>
+        <button class="ghost" type="button" id="next" aria-label="Следующие часы">→</button>
+      </div>
+    </div>
+    <span class="hint">ЛИСТАЙТЕ СВАЙПОМ ИЛИ СТРЕЛКАМИ · ВНИЗ — РАЗБОР</span>
+  </section>
+
+  <main class="story" id="story-prx" data-fam="prx">
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow" id="p0-eyebrow">Tissot PRX · T137.410.11.091.00</span>
+        <h2>Ретро 1978 года. Сделано для сегодня.</h2>
+        <p id="p0-lead">Стальной корпус-«телевизор» и браслет, который переходит прямо в корпус.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>10,4</span><small>мм</small></div>
+        <h2>Тонкий профиль.</h2>
+        <p>Корпус из стали 316L толщиной 10,4 мм при диаметре 40 мм. Часы не цепляются за манжету и легко уходят под рукав.</p>
+      </div>
+    </section>
+    <section class="scene low">
+      <div class="copy">
+        <span class="eyebrow">Анатомия</span>
+        <h2>Сапфир и сталь.</h2>
+        <p>Сапфировое стекло, полированный безель и корпус из стали 316L, который переходит прямо в браслет.</p>
+        <ul class="parts">
+          <li>Сапфировое стекло</li><li>Безель</li><li>Заводная головка</li><li>Корпус 316L</li><li>Циферблат</li><li>Браслет</li>
+        </ul>
+      </div>
+    </section>
+    <section class="scene low">
+      <div class="copy">
+        <span class="eyebrow">Циферблат крупным планом</span>
+        <h2>Солнечные лучи.</h2>
+        <p id="p3-text">Рисунок расходится от центра и ловит свет при каждом повороте руки.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>100</span><small>м</small></div>
+        <h2>10 бар защиты от воды.</h2>
+        <p>Водозащита до 10 бар — запас для повседневной жизни: дождь, брызги, мытьё рук.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>130</span><small>г</small></div>
+        <h2>Вес настоящей стали.</h2>
+        <p>Закрытая стальная крышка с гравировкой, браслет с застёжкой-бабочкой TISSOT 1853.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow">Один корпус</span>
+        <h2>Четыре циферблата.</h2>
+        <p>Выберите цвет — часы перекрасятся прямо здесь.</p>
+        <div class="swatches" id="swatches-prx" data-live role="group" aria-label="Цвет циферблата"></div>
+      </div>
+    </section>
+    <section class="scene center low">
+      <div class="copy">
+        <span class="eyebrow">Tissot PRX 40 мм</span>
+        <h2>Носите каждый день.</h2>
+        <p>Полный список характеристик — ниже. Вопросы и новые разборы — в Telegram.</p>
+      </div>
+    </section>
+  </main>
+
+  <main class="story" id="story-bell" data-fam="bell" hidden>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow" id="b0-eyebrow">Tissot Bellissima · T126.010.22.013.01</span>
+        <h2>Маленькие часы с характером.</h2>
+        <p id="b0-lead">Корпус 26 мм, лента полированной стали обтекает циферблат и уходит к головке.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>6,85</span><small>мм</small></div>
+        <h2>Почти невесомые.</h2>
+        <p>Толщина 6,85 мм и 59 граммов вместе с браслетом — часы, которые не чувствуешь на руке.</p>
+      </div>
+    </section>
+    <section class="scene low">
+      <div class="copy">
+        <span class="eyebrow">Циферблат крупным планом</span>
+        <h2 id="b2-title">Гильоше в форме розы.</h2>
+        <p id="b2-text">Волнистый узор в центре, римские цифры и круглое окошко даты на шести часах.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow">Браслет</span>
+        <h2 id="b3-title">Пять рядов звеньев.</h2>
+        <p id="b3-text">Сталь и розовое золото PVD чередуются, как кирпичная кладка. Браслет закрывается застёжкой-бабочкой.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>50</span><small>м</small></div>
+        <h2>Сапфир и 5 бар.</h2>
+        <p>Сапфировое стекло с антибликовым покрытием и водозащита до 5 бар для каждого дня.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow">Застёжка</span>
+        <h2>Бабочка.</h2>
+        <p>Две плоские стальные пластины с гравировкой TISSOT и 1853. По бокам на стыке чуть выступают кнопки механизма: нажми их с двух сторон — и застёжка раскроется.</p>
+      </div>
+    </section>
+    <section class="scene center low">
+      <div class="copy">
+        <span class="eyebrow">Tissot Bellissima 26 мм</span>
+        <h2>Два характера.</h2>
+        <p>Розовое золото с серебряным гильоше или сталь с голубым перламутром.</p>
+        <div class="swatches" id="swatches-bell" data-live role="group" aria-label="Вариант Bellissima"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="closing">
+    <section class="wrap specs">
+      <h2>PRX или Bellissima</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th></th><th>PRX 40 мм</th><th>Bellissima 26 мм</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Диаметр</th><td>40 мм</td><td>26 мм</td></tr>
+            <tr><th scope="row">Толщина</th><td>10,4 мм</td><td>6,85 мм</td></tr>
+            <tr><th scope="row">Водозащита</th><td>10 бар (100 м)</td><td>5 бар (50 м)</td></tr>
+            <tr><th scope="row">Механизм</th><td>Кварц, 3 стрелки, дата</td><td>Кварц, 3 стрелки, дата</td></tr>
+            <tr><th scope="row">Стекло</th><td>Сапфировое</td><td>Сапфировое, антибликовое</td></tr>
+            <tr><th scope="row">Корпус и браслет</th><td>Сталь 316L, застёжка-бабочка</td><td>Сталь 316L (PVD розовое золото у .22.013.01), застёжка-бабочка</td></tr>
+            <tr><th scope="row">Вес</th><td>130 г</td><td>59 г</td></tr>
+            <tr><th scope="row">Подсветка</th><td>Super-LumiNova® на стрелках</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="src">По данным официальных карточек Tissot. Изображения — компьютерный рендер, иллюстрация.</p>
+    </section>
+    <section class="wrap author">
+      <div class="card">
+        <div>
+          <span class="eyebrow" style="color:var(--muted)">Автор проекта</span>
+          <h2>Снимаю и разбираю часы Tissot</h2>
+          <p>Новые разборы и детали крупным планом — в моём Telegram.</p>
+        </div>
+        <a class="tg" href="https://t.me/watchpoint_manager" target="_blank" rel="noopener">@watchpoint_manager <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+    <footer><div class="wrap"><p>© Watch Point — личный некоммерческий проект. Не является официальным сайтом Tissot; товарные знаки принадлежат их правообладателю. Изображения — компьютерная графика в информационных целях; по запросу правообладателя будут удалены.</p></div></footer>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* Watch Point: real-time WebGL2 — Tissot PRX (4 dials, atlas-textured mesh) and Bellissima (2 variants, material-group meshes). */
+const BS=1.36;   /* Bellissima is 26 mm: scale it up so the case reads about as large as a PRX */
+const MODELS=[
+  {key:'prx-green', fam:'prx', dk:'green', name:'PRX зелёный', short:'Зелёный', ref:'T137.410.11.091.00', glow:'#1f7a52', deep:'#082419', sw:'#0b5a3c', tint:[.75,1,.85], yaw:24, roll:9,
+   lead:'Глубокий зелёный циферблат и интегрированный стальной браслет — самый яркий PRX на полке.',
+   dial:'Зелёный циферблат с «солнечными лучами»: оттенок меняется от светлого к глубокому при каждом повороте руки.'},
+  {key:'prx-blue', fam:'prx', dk:'blue', name:'PRX синий', short:'Синий', ref:'T137.410.11.041.00', glow:'#2f5fae', deep:'#08152b', sw:'#12305a', tint:[.75,.85,1], yaw:-28, roll:-11,
+   lead:'Самый узнаваемый PRX: синий циферблат и строгая геометрия корпуса-«телевизора».',
+   dial:'Синий циферблат с «солнечными лучами» и светлыми метками. Стрелки Super-LumiNova® читаются и ночью.'},
+  {key:'prx-silver', fam:'prx', dk:'silver', name:'PRX серебро', short:'Серебро', ref:'T137.410.11.031.00', glow:'#8d96a6', deep:'#1b1d22', sw:'#d9dadc', tint:[1,.95,.92], yaw:18, roll:-7,
+   lead:'Самый спокойный вариант линии: светлый циферблат и к костюму, и к футболке.',
+   dial:'Серебристый циферблат с «солнечными лучами»: светлый, спокойный, легко читается.'},
+  {key:'prx-black', fam:'prx', dk:'black', name:'PRX чёрный', short:'Чёрный', ref:'T137.410.11.051.00', glow:'#55575f', deep:'#0a0a0b', sw:'#222326', tint:[.9,.9,.95], yaw:-20, roll:12,
+   lead:'Контраст на максимум: чёрный циферблат и полированные грани стали.',
+   dial:'Глубокий чёрный циферблат: белые метки и стрелки читаются с одного взгляда.'},
+  {key:'bell-b22', fam:'bell', mk:'b22', name:'Bellissima розовое золото', short:'Розовое золото', ref:'T126.010.22.013.01', glow:'#b9826a', deep:'#2a1712', sw:'#d9a48c', tint:[1,.93,.88], yaw:-22, roll:-8,
+   lead:'Корпус 26 мм, лента полированной стали обтекает циферблат, безель и головка — розовое золото PVD.',
+   dialT:'Гильоше в форме розы.', dial:'Серебристый циферблат с волнистым гильоше, чёрные римские цифры и круглое окошко даты.',
+   braT:'Пять рядов звеньев.', bra:'Сталь и розовое золото PVD чередуются, как кирпичная кладка. Браслет закрывается застёжкой-бабочкой.'},
+  {key:'bell-b11', fam:'bell', mk:'b11', name:'Bellissima перламутр', short:'Голубой перламутр', ref:'T126.010.11.133.00', glow:'#5b8fb4', deep:'#0b1a26', sw:'#8fb8d6', tint:[.9,.96,1], yaw:20, roll:8,
+   lead:'Корпус 26 мм из полированной стали и голубой перламутровый циферблат с накладными римскими цифрами.',
+   dialT:'Голубой перламутр.', dial:'Перламутр переливается при каждом повороте, накладные римские цифры ловят свет.',
+   braT:'Пять рядов стали.', bra:'Полированные звенья в пять рядов, смещённые как кирпичная кладка. Браслет закрывается застёжкой-бабочкой.'}
+];
+const FAM={prx:{story:'story-prx',word:'PRX',sc:1},bell:{story:'story-bell',word:'BELLISSIMA',sc:BS}};
+const N=MODELS.length, $=(id)=>document.getElementById(id);
+const canvas=$('stage'); let gl=null;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const toRad=Math.PI/180;
+const readDBG=()=>{ try{ return JSON.parse(decodeURIComponent((location.hash||'').slice(1)||'null')); }catch(e){ return null; } };
+let DBG=readDBG();   /* #{"m":4,"p":{...}} — fixed pose for visual tests */
+let sel=DBG&&DBG.m!=null?DBG.m:0, SFIT=null;
+addEventListener('hashchange',()=>{ DBG=readDBG(); if(DBG&&DBG.m!=null){ sel=DBG.m; setUI(); } if(DBG&&DBG.exp) BELL_EXP=DBG.exp; });
+if('scrollRestoration' in history) history.scrollRestoration='manual';   /* always open on the shelf */
+window.scrollTo(0,0);
+
+/* ---------- UI ---------- */
+const stories={prx:$('story-prx'),bell:$('story-bell')};
+const famScenes=f=>[...stories[f].querySelectorAll('.scene')];
+let curFam=null, scenes=[], storyEl=stories.prx;
+function buildSwatches(fam,el){ MODELS.forEach((m,i)=>{ if(m.fam!==fam) return; const b=document.createElement('button'); b.type='button'; b.className='sw'; b.dataset.i=i;
+  b.innerHTML='<i style="background:'+m.sw+'"></i>'+m.short; b.onclick=()=>{sel=i;setUI();}; el.appendChild(b); }); }
+buildSwatches('prx',$('swatches-prx')); buildSwatches('bell',$('swatches-bell'));
+function setUI(){
+  const m=MODELS[sel];
+  $('label').innerHTML=m.name+'<small>'+m.ref+'</small>';
+  if(m.fam==='prx'){ $('p0-eyebrow').textContent='Tissot PRX · '+m.ref; $('p0-lead').textContent=m.lead; $('p3-text').textContent=m.dial; }
+  else { $('b0-eyebrow').textContent='Tissot Bellissima · '+m.ref; $('b0-lead').textContent=m.lead; $('b2-title').textContent=m.dialT; $('b2-text').textContent=m.dial; $('b3-title').textContent=m.braT; $('b3-text').textContent=m.bra; }
+  document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i===sel?'true':'false'));
+  if(curFam!==m.fam){ curFam=m.fam; for(const f in stories) stories[f].hidden=(f!==m.fam); $('word').textContent=FAM[m.fam].word; scenes=famScenes(curFam); storyEl=stories[curFam]; measure(); }
+  ensureMesh(m);
+}
+function step(d){ sel=(sel+d+N)%N; setUI(); }
+$('prev').onclick=()=>step(-1); $('next').onclick=()=>step(1);
+$('open').onclick=()=>window.scrollTo({top:storyEl.offsetTop,behavior:reduce?'auto':'smooth'});
+$('home').onclick=()=>window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+document.addEventListener('keydown',e=>{ if(window.scrollY>innerHeight*.5) return; if(e.key==='ArrowRight') step(1); if(e.key==='ArrowLeft') step(-1); });
+let lastWheel=0;
+window.addEventListener('wheel',e=>{ /* horizontal swipe on the shelf flips watches; vertical scroll goes down the page */
+  if(window.scrollY>innerHeight*.4||Math.abs(e.deltaX)<=Math.abs(e.deltaY)) return;
+  const now=performance.now(); if(Math.abs(e.deltaX)<8||now-lastWheel<520) return; lastWheel=now; step(e.deltaX>0?1:-1);
+},{passive:true});
+/* mouse: drag or click on the shelf */
+let drag=null;
+canvas.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||window.scrollY>innerHeight*.3) return; drag={x:e.clientX,y:e.clientY}; });
+window.addEventListener('pointerup',e=>{ if(!drag||e.pointerType!=='mouse') return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag=null;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5) step(dx<0?1:-1); else if(Math.hypot(dx,dy)<6) pick(e); });
+/* touch: a swipe flips watches only if it is clearly sideways and the page did not scroll meanwhile */
+let tch=null;
+canvas.addEventListener('touchstart',e=>{ if(e.touches.length!==1||window.scrollY>innerHeight*.3){tch=null;return;} const q=e.touches[0]; tch={x:q.clientX,y:q.clientY,sy:window.scrollY,t:performance.now()}; },{passive:true});
+canvas.addEventListener('touchcancel',()=>{tch=null;},{passive:true});
+canvas.addEventListener('touchend',e=>{ if(!tch) return; const q=e.changedTouches[0], dx=q.clientX-tch.x, dy=q.clientY-tch.y, scrolled=Math.abs(window.scrollY-tch.sy), dt=performance.now()-tch.t; tch=null;
+  if(scrolled>4) return;
+  if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.6) step(dx<0?1:-1);
+  else if(Math.hypot(dx,dy)<8&&dt<350) pick(q); },{passive:true});
+
+/* ---------- layout ---------- */
+let resScale=1;   /* adaptive render resolution: drops on slow GPUs, recovers when frames are cheap */
+function setRes(){ const dpr=Math.min(2,window.devicePixelRatio||1)*resScale; const w=Math.round(vw*dpr), h=Math.round(vh*dpr);
+  if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; } if(gl) gl.viewport(0,0,canvas.width,canvas.height); }
+let fEma=16, fCnt=0;
+function adapt(dt){ if(navigator.webdriver||DBG||document.hidden) return; fEma+=(dt-fEma)*.06; if(++fCnt<45) return;
+  if(fEma>27&&resScale>.55){ resScale=Math.max(.55,resScale*.86); setRes(); fCnt=0; fEma=18; }
+  else if(fEma<14.5&&resScale<1){ resScale=Math.min(1,resScale*1.08); setRes(); fCnt=-60; } }
+let vw=innerWidth, vh=innerHeight, narrow=false, storyTop=0, centres=[], proj, view, cam=[0,0,.3];
+function measure(){
+  vw=innerWidth; vh=innerHeight; narrow=vw<720;
+  setRes(); canvas.style.width=vw+'px'; canvas.style.height=vh+'px';
+  const asp=vw/vh, fov=(asp<.8?MOB.fov:26)*toRad; proj=M4.persp(fov,asp,.01,5);
+  cam=[0,0,asp<.8?.36:.3]; view=M4.tr(0,0,-cam[2]);
+  if(!curFam) return; storyTop=storyEl.offsetTop;
+  centres=scenes.map(el=>storyTop+el.offsetTop+el.offsetHeight/2);
+}
+addEventListener('resize',()=>{ measure(); setTimeout(measure,250); });
+addEventListener('load',measure);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(measure);
+
+/* ---------- math ---------- */
+const M4={
+  id(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];},
+  mul(a,b){const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];o[c*4+r]=s;}return o;},
+  persp(f,a,n,fa){const t=1/Math.tan(f/2);return [t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];},
+  tr(x,y,z){return [1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1];},
+  rx(a){const c=Math.cos(a),s=Math.sin(a);return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1];},
+  ry(a){const c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];},
+  rz(a){const c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];},
+  sc(s){return [s,0,0,0,0,s,0,0,0,0,s,0,0,0,0,1];},
+  xf(m,p){const x=p[0],y=p[1],z=p[2];return [m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13],m[2]*x+m[6]*y+m[10]*z+m[14],m[3]*x+m[7]*y+m[11]*z+m[15]];}
+};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t, ease=t=>t*t*(3-2*t);
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
+
+/* ---------- WebGL ---------- */
+gl=canvas.getContext('webgl2',{antialias:true,alpha:true,premultipliedAlpha:true});
+if(!gl){ $('loading').textContent='ВАШ БРАУЗЕР НЕ ПОКАЗЫВАЕТ 3D'; throw new Error('WebGL2 is not available'); }
+const VS=`#version 300 es
+in vec3 aPos; in vec4 aNor; in vec2 aUv; in vec4 aExp;
+uniform mat4 uP,uV,uM; uniform vec3 uCenter; uniform float uHalf,uExpScale,uExplode; uniform vec2 uUvMap; uniform int uHasAO;
+out vec3 vW; out vec3 vN; out vec3 vMP; out vec3 vMN; out vec3 vT; out vec2 vUv; out float vAO;
+void main(){ vec3 p=aPos*uHalf+uCenter; vMP=p; vMN=aNor.xyz; p+=aExp.xyz*uExpScale*uExplode;
+  vUv=uUvMap.x+aUv*uUvMap.y; vAO=uHasAO==1?clamp(aNor.w*1.0039,0.,1.):1.; vAO=mix(vAO,1.,uExplode*.6);
+  vec4 w=uM*vec4(p,1.); vW=w.xyz; vN=mat3(uM)*aNor.xyz;
+  vec2 r=length(vMP.xy)>1e-5?normalize(vMP.xy):vec2(1.,0.); vT=mat3(uM)*vec3(r,0.); gl_Position=uP*uV*w; }`;
+const FS=`#version 300 es
+precision highp float;
+in vec3 vW; in vec3 vN; in vec3 vMP; in vec3 vMN; in vec3 vT; in vec2 vUv; in float vAO; out vec4 o;
+uniform vec4 uBase; uniform float uMetal,uRough,uOpen,uExp; uniform int uRole;
+uniform sampler2D uTex,uMR,uEng,uEngB,uDT,uDM; uniform int uTextured,uRecolor,uDesat; uniform vec3 uDialBg,uDialInk,uDialMR;
+uniform vec3 uCam,uTint; uniform mat4 uM; uniform vec2 uMid; uniform float uDMK,uDG,uDA;
+const vec2 DIAL_C=vec2(.7287,.4603); const float DIAL_R=.0835; const float PI=3.14159265;
+float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=normalize(cross(vec3(0,1,0),z)); vec3 y=cross(z,x);
+  float k=dot(d,z); if(k<=0.) return 0.; vec2 p=vec2(dot(d,x),dot(d,y))/k; vec2 q=abs(p)-size; return 1.-smoothstep(-soft,soft,max(q.x,q.y)); }
+vec3 env(vec3 d){
+  float y=d.y;
+  vec3 c=mix(vec3(.05,.053,.06),vec3(.28,.29,.32),smoothstep(-.2,.9,y));
+  c+=vec3(.34)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
+  c+=vec3(9.)*box(d,vec3(.9,.25,.35),vec2(.32,.9),.12);
+  c+=vec3(5.5)*box(d,vec3(-.95,.35,.2),vec2(.22,1.1),.16);
+  c+=vec3(1.9)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
+  c+=vec3(2.5)*box(d,vec3(-.2,.15,-1.),vec2(.9,.25),.2);
+  c+=vec3(1.4)*box(d,vec3(0.,.05,1.),vec2(1.4,.06),.05);
+  return c*mix(vec3(1.),uTint,uOpen*.3);
+}
+vec3 envBlur(vec3 R,vec3 N,float rough){
+  float a=rough*rough; if(a<.02) return env(R);
+  vec3 up=abs(R.y)<.95?vec3(0,1,0):vec3(1,0,0); vec3 t=normalize(cross(up,R)); vec3 b=cross(R,t);
+  vec3 acc=vec3(0.); float w=0.; float spread=clamp(a*1.6,0.,1.2);
+  for(int i=0;i<12;i++){ float fi=float(i); float ang=fi*2.39996; float r=sqrt((fi+.5)/12.)*spread;
+    vec3 d=normalize(R+(t*cos(ang)+b*sin(ang))*r); float ww=max(dot(d,N),0.)+.05; acc+=env(d)*ww; w+=ww; }
+  return acc/w;
+}
+vec2 envBRDF(float ndv,float rough){ vec4 c0=vec4(-1.,-.0275,-.572,.022), c1=vec4(1.,.0425,1.04,-.04); vec4 r=rough*c0+c1;
+  float a004=min(r.x*r.x,exp2(-9.28*ndv))*r.x+r.y; return vec2(-1.04,1.04)*a004+r.zw; }
+float D_GGX(float nh,float a){ float a2=a*a; float d=nh*nh*(a2-1.)+1.; return a2/(PI*d*d); }
+void main(){
+  vec3 N=normalize(vN); if(!gl_FrontFacing) N=-N;
+  vec3 V=normalize(uCam-vW);
+  vec3 base=uBase.rgb; float metal=uMetal, rough=uRough; int role=uRole; float ao=vAO; float dialSpec=1.;
+  if(uTextured==1){
+    vec3 t=texture(uTex,vUv).rgb; vec3 mr=texture(uMR,vUv).rgb;
+    metal=mr.b; rough=clamp(mr.g*1.2+.06,.08,1.);
+    if(distance(vUv,DIAL_C)<DIAL_R){
+      if(uRecolor==1){
+        float l=dot(t,vec3(.333));
+        float ink=(1.-smoothstep(.42,.66,l))*smoothstep(.06,.16,l);
+        float hole=1.-smoothstep(.04,.12,l);
+        vec3 bg=uDialBg*(.95+(l-.8)*.9);
+        t=mix(mix(bg,uDialInk,ink),vec3(.02),hole);
+        metal=mix(uDialMR.x,.1,ink); rough=mix(uDialMR.y,.4,ink); dialSpec=mix(uDialMR.z,1.,ink);
+      } else { metal=.15; rough=.32; }
+      role=1;
+    } else if(uDesat==1){
+      float o2=smoothstep(.1,.22,t.r-t.b); t=mix(t,vec3(dot(t,vec3(.3,.59,.11))*1.15),o2);
+    }
+    base=pow(t,vec3(2.2));
+    if(metal>.5&&role!=1) base=mix(vec3(.64,.655,.68),base*1.9,.45);
+    /* clasp cover engraving: TISSOT / 1853, read from the back of the bracelet */
+    if(vMP.z<-.0433&&vMN.z<-.6&&abs(vMP.x)<.0075&&abs(vMP.y)<.0075){
+      float m=texture(uEng,vec2(.5-vMP.x/.015,.5-vMP.y/.015)).r;
+      base*=1.-.5*m; rough=mix(rough,.6,m); ao*=1.-.25*m; }
+  } else if(role==3){            /* Bellissima dial: baked albedo + metal/rough + guilloche normal slopes (model-space xy, 20.8 mm field) */
+    vec2 q=vec2(.5+vMP.x/.0208,.5-vMP.y/.0208);
+    base=pow(texture(uDT,q).rgb,vec3(2.2)); vec4 m=texture(uDM,q); metal=m.r*uDMK; rough=m.g;
+    vec3 Tx=normalize(mat3(uM)*vec3(1,0,0)), Ty=normalize(mat3(uM)*vec3(0,1,0)); vec2 sl=(m.ba-.5)*.5;
+    N=normalize(N-sl.x*Tx-sl.y*Ty);
+    float rr=length(vMP.xy); if(rr<uMid.x||rr>uMid.y) dialSpec=1.; else dialSpec=1.;
+  } else if(role==4){            /* caseback engraving (viewed from the back) */
+    float E=vMN.z<-.6?texture(uEngB,vec2(.5-vMP.x/.0232,.5-vMP.y/.0232)).r:0.;
+    base=mix(base,vec3(.2,.2,.21),E); rough=.2+E*.35;
+  } else if(role==5){            /* clasp plates: TISSOT / 1853 on the outer face */
+    float E=vMN.z<-.9?texture(uEngB,vec2(.5-vMP.x/.0124,.5-vMP.y/.0166)).g:0.;
+    base=mix(base,vec3(.66,.66,.68),E); metal=1.-E*.75; rough=.14+E*.4;
+  }
+  float ndv=max(dot(N,V),1e-4);
+  vec3 R=reflect(-V,N);
+  vec3 F0=mix(vec3(.04),base,metal);
+  vec2 ab=envBRDF(ndv,rough);
+  vec3 spec=envBlur(R,N,rough)*(F0*ab.x+ab.y);
+  vec3 diff=base*(1.-metal)*(envBlur(N,N,1.)*.9+(role==3?uDA:0.));
+  vec3 L=normalize(vec3(.9,.25,.35)); vec3 H=normalize(L+V); float nl=max(dot(N,L),0.);
+  float a=max(rough*rough,.02); vec3 Fk=F0+(1.-F0)*pow(1.-max(dot(H,V),0.),5.);
+  vec3 key=D_GGX(max(dot(N,H),0.),a)*Fk*nl*.25/max(4.*ndv*nl,.05)*1.2;
+  float so=clamp(pow(ndv+ao,exp2(-16.*rough-1.))-1.+ao,0.,1.);
+  vec3 col=diff*ao+spec*so*dialSpec+key*ao;
+  if(role==1){ vec3 T=normalize(vT); float an=1.-abs(dot(T,H));
+    col+=(base*pow(an,12.)*1.6*smoothstep(.002,.006,length(vMP.xy))+F0*pow(an,30.)*1.2)*uDialMR.z; }
+  float alpha=uBase.a;
+  if(uRole==2){ vec3 F=vec3(.06)+(vec3(1.)-vec3(.06))*pow(1.-ndv,5.);
+    vec3 g=env(R)*F; alpha=clamp(dot(F,vec3(.333))*.6+dot(g,vec3(.1)),0.,.8); col=g/max(alpha,.03); }
+  if(role==3) col*=uDG;
+  col*=uExp;
+  col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
+  col=pow(clamp(col,0.,1.),vec3(1./2.2));
+  o=vec4(col*alpha,alpha);
+}`;
+function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(x));return x;}
+const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uExp','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk','uEng','uEngB','uDT','uDM','uMid','uDMK','uDG','uDA'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+/* engraving mask for the PRX clasp: 512px = 15 mm, groove at the middle */
+const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
+  x.fillStyle='#000'; x.fillRect(0,0,512,512); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
+  x.font='700 92px Georgia,"Times New Roman",serif'; x.fillText('TISSOT',256,256-3.1*34.1,400);
+  /* year: every digit scaled to the same height on one baseline, so old-style figures of any font stand level */
+  x.font='700 80px "Times New Roman",Times,Georgia,serif'; x.textBaseline='alphabetic'; x.textAlign='left';
+  { const H=46, base=256+3*34.1+H/2, gap=10, ds=[...'1853'].map(ch=>{ const m=x.measureText(ch); const a=m.actualBoundingBoxAscent, d=m.actualBoundingBoxDescent;
+      const k=H/Math.max(1,a+d); return {ch,a,d,k,w:(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)*Math.min(k,1.15),l:m.actualBoundingBoxLeft}; });
+    let cx=256-(ds.reduce((t,o)=>t+o.w,0)+gap*(ds.length-1))/2;
+    ds.forEach(o=>{ const kx=Math.min(o.k,1.15); x.save(); x.translate(cx+o.l*kx,base); x.scale(kx,o.k); x.fillText(o.ch,0,-o.d); x.strokeStyle='#fff'; x.lineWidth=2.4; x.strokeText(o.ch,0,-o.d); x.restore(); cx+=o.w+gap; }); }
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,512,512,0,gl.RED,gl.UNSIGNED_BYTE,
+    (()=>{ const d=x.getImageData(0,0,512,512).data, o=new Uint8Array(512*512); for(let i=0;i<o.length;i++) o[i]=d[i*4]; return o; })());
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,4); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; })();
+const A={pos:gl.getAttribLocation(prog,'aPos'),nor:gl.getAttribLocation(prog,'aNor'),uv:gl.getAttribLocation(prog,'aUv'),exp:gl.getAttribLocation(prog,'aExp')};
+
+async function loadTex(url,clamp_){
+  const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status+' '+url);
+  const bmp=await createImageBitmap(await res.blob(),{imageOrientation:'none',premultiplyAlpha:'none',colorSpaceConversion:'none'});
+  const tx=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tx);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  if(clamp_){ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); }
+  const ext=gl.getExtension('EXT_texture_filter_anisotropic'); if(ext) gl.texParameterf(gl.TEXTURE_2D,ext.TEXTURE_MAX_ANISOTROPY_EXT,8);
+  if(bmp.close) bmp.close();
+  return tx;
+}
+function putAttr(arr,loc,size,type,norm){ const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW); if(loc>=0){gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,size,type,norm,0,0);} }
+/* ~500 sample points of the body, used to measure where the watch is on screen */
+function samplePts(P16,count,H){ const pts=[], stp=Math.max(1,Math.floor(count/500)); for(let v=0;v<count;v+=stp) pts.push([0,1,2].map(a=>P16[v*3+a]/32767*H.half+H.center[a])); return pts; }
+/* PRX: gzip'd binary, one atlas-textured mesh */
+async function loadWPM(url){
+  const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status);
+  const buf=await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(), dv=new DataView(buf);
+  const hl=dv.getUint32(4,true); const H=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,8,hl))); const base=8+hl;
+  const draws=H.groups.map(g=>{
+    const vao=gl.createVertexArray(); gl.bindVertexArray(vao);
+    putAttr(new Int16Array(buf,base+g.pos,g.count*3),A.pos,3,gl.SHORT,true);
+    putAttr(new Int8Array(buf,base+g.nor,g.count*4),A.nor,4,gl.BYTE,true);
+    putAttr(new Uint16Array(buf,base+g.uv,g.count*2),A.uv,2,gl.UNSIGNED_SHORT,true);
+    if(g.exp!=null) putAttr(new Int8Array(buf,base+g.exp,g.count*4),A.exp,4,gl.BYTE,true);
+    const ib=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(buf,base+g.idx,g.icount),gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    const glass=g.role==='glass';
+    return {vao,icount:g.icount,itype:gl.UNSIGNED_INT,blend:glass,role:glass?2:0,textured:!glass,base:[1,1,1,1],metal:glass?0:1,rough:glass?.04:.3};
+  });
+  const g0=H.groups[0];
+  return {kind:'prx',draws,pts:samplePts(new Int16Array(buf,base+g0.pos,g0.count*3),g0.count,H),center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
+}
+/* Bellissima: WPM2 = gzip'd binary, one group per material (int16 pos, int8 normal + AO, uint16/32 indices) */
+const ROLE={glass:2,dial:3,back:4,clasp:5};
+async function loadWPM2(url){
+  const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status);
+  const buf=await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  const dv=new DataView(buf); const hl=dv.getUint32(4,true); const H=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,8,hl))); const base=8+hl;
+  const draws=H.groups.map(g=>{
+    const vao=gl.createVertexArray(); gl.bindVertexArray(vao);
+    putAttr(new Int16Array(buf,base+g.pos,g.count*3),A.pos,3,gl.SHORT,true);
+    putAttr(new Int8Array(buf,base+g.nor,g.count*4),A.nor,4,gl.BYTE,true);
+    const ib=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,g.i32?new Uint32Array(buf,base+g.idx,g.icount):new Uint16Array(buf,base+g.idx,g.icount),gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    const glass=g.role==='glass';
+    return {vao,icount:g.icount,itype:g.i32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,blend:glass,role:ROLE[g.role]||0,textured:false,base:g.base,metal:g.metal,rough:g.rough,name:g.name};
+  });
+  const g0=H.groups[0];
+  return {kind:'bell',draws,pts:samplePts(new Int16Array(buf,base+g0.pos,g0.count*3),g0.count,H),center:H.center,half:H.half,uvMap:[0,1],expScale:0};
+}
+const DIAL={
+  green:{bg:[.03,.27,.155],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.25,.3,.38]},
+  blue:{bg:[.02,.10,.34],ink:[.95,.96,.98],recolor:1,desat:1,mr:[.25,.3,.38]},
+  black:{bg:[.02,.021,.024],ink:[.94,.94,.94],recolor:1,desat:1,mr:[.04,.1,.3]},
+  silver:{bg:[.8,.8,.8],ink:[.2,.2,.2],recolor:0,desat:0,mr:[.15,.32,1]}
+};
+const BELL_MID={b22:[.00588,.00962],b11:[.00588,.00855]};
+/* lazily loaded assets: PRX mesh+atlas (shared by 4 colours), Bellissima mesh+dial per variant, engraving masks */
+const ASSET={};
+function ensureMesh(m){
+  const k=m.fam==='prx'?'prx':'bell-'+m.mk; if(ASSET[k]) return ASSET[k];
+  const p=m.fam==='prx'
+    ? Promise.all([loadWPM('models/prx.wpm.gz'),loadTex('models/prx-albedo.jpg'),loadTex('models/prx-mr.png')]).then(([mesh,a,r])=>({mesh,tex:{a,m:r}}))
+    : Promise.all([loadWPM2('models/bell-'+m.mk+'.wpm.gz'),loadTex('models/dial-'+m.mk+'.webp',1),loadTex('models/dialmr-'+m.mk+'.webp',1),ensureEngB()]).then(([mesh,dt,dm,eb])=>({mesh,tex:{dt,dm},eb}));
+  ASSET[k]=p; p.then(r=>{ ASSET[k+'#']=r; if(MODELS[sel]===m||(MODELS[sel].fam===m.fam&&(m.fam==='prx'||MODELS[sel].mk===m.mk))) $('loading').hidden=true; }).catch(err=>{ $('loading').textContent='НЕ УДАЛОСЬ ЗАГРУЗИТЬ 3D'; console.error(err); });
+  return p;
+}
+let ENGB=null; function ensureEngB(){ return ENGB||(ENGB=loadTex('models/eng-bell.webp',1)); }
+const assetOf=m=>ASSET[(m.fam==='prx'?'prx':'bell-'+m.mk)+'#']||null;
+
+/* ---------- choreography ---------- */
+/* pose: x,y,z (m), ry,rx,rz (deg), s, e = explode 0..1. Narrow screens use n:{…} overrides. bg = [glow, deep] or 'w' for the selected watch. */
+const MOB={fov:30,shelfY:.028,shelfZ:.035,peek:.063,big:1.28,side:1.08};
+const SCENES={
+ prx:[
+  {p:{x:.03,y:0,z:.04,ry:-22,rx:8,rz:-22,s:1.25,e:0},n:{x:0,y:0.026,z:.0,s:1.25},bg:'w',word:1},
+  {p:{x:.05,y:.002,z:.02,ry:84,rx:4,rz:0,s:1.15,e:0},n:{x:0,y:0.034,z:-.02,s:1.25},bg:['#3a3d45','#0c0d10']},
+  {p:{x:.012,y:.008,z:.035,ry:-48,rx:12,rz:-8,s:1.25,e:0},n:{x:0,y:0.032,z:-.01,s:1.312},bg:['#2a2d35','#0a0b0e'],labels:1},
+  {p:{x:.0,y:-.003,z:.205,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.095},bg:'w'},
+  {p:{x:.035,y:0,z:.04,ry:-32,rx:-22,rz:-30,s:1.25,e:0},n:{x:0,y:0.04,z:-.01,s:1.188},bg:['#1d4f9e','#05132a']},
+  {p:{x:.05,y:0,z:.0,ry:158,rx:6,rz:14,s:1.0,e:0},n:{x:0,y:0.034,z:-.03,s:1.125},bg:['#4a3b30','#120d0a']},
+  {p:{x:.035,y:0,z:.05,ry:-14,rx:5,rz:-12,s:1.3,e:0},n:{x:0,y:0.03,z:.0,s:1.25},bg:'w'},
+  {p:{x:0,y:.022,z:-.02,ry:0,rx:4,rz:0,s:1.0,e:0},n:{x:0,y:0.034,z:0,s:1.25},bg:'w',word:1}
+ ],
+ bell:[
+  {p:{x:.03,y:0,z:.03,ry:-22,rx:8,rz:-22,s:1.15,e:0},n:{x:0,y:0.026,z:.0,s:1.0},bg:'w',word:1},
+  {p:{x:.05,y:.002,z:.02,ry:84,rx:4,rz:0,s:1.25,e:0},n:{x:0,y:0.034,z:-.02,s:1.0},bg:['#3a3d45','#0c0d10']},
+  {p:{x:.0,y:-.003,z:.2,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.095},bg:'w'},
+  {p:{x:.035,y:0,z:.03,ry:-32,rx:-38,rz:-12,s:1.1,e:0},n:{x:0,y:0.04,z:-.01,s:1.0},bg:['#2a2d35','#0a0b0e']},
+  {p:{x:.04,y:0,z:.03,ry:-160,rx:-10,rz:8,s:1.2,e:0},n:{x:0,y:0.034,z:-.02,s:1.0},bg:['#1d4f9e','#05132a']},
+  {p:{x:.04,y:0,z:.02,ry:-180,rx:8,rz:0,s:1.25,e:0},n:{x:0,y:0.034,z:.0,s:1.0},bg:['#4a3b30','#120d0a']},
+  {p:{x:0,y:.032,z:-.02,ry:0,rx:4,rz:0,s:.98,e:0},n:{x:0,y:0.034,z:0,s:1.0},bg:'w',word:1}
+ ]
+};
+const CLOSE_I={prx:3,bell:2}, ANAT_I={prx:2};
+const LABELS=[ /* PRX anchors in model space (metres); side: label to the right or left of the anchor */
+  {a:[.004,.012,.0047],t:'Сапфировое стекло',s:'устойчиво к царапинам',side:'r'},
+  {a:[.0165,.007,.0042],t:'Безель',s:'полированная сталь',side:'r'},
+  {a:[.0215,0,-.0008],t:'Заводная головка',s:'сталь, с насечкой',side:'r'},
+  {a:[-.0195,-.006,-.0005],t:'Корпус',s:'сталь 316L, 40 × 10,4 мм',side:'l'},
+  {a:[-.008,-.006,.0023],t:'Циферблат',s:'«солнечные лучи»',side:'l'},
+  {a:[-.011,-.03,-.004],t:'Браслет',s:'интегрированный, застёжка-бабочка',side:'l'}
+];
+const co=$('callouts');
+const SVGNS='http://www.w3.org/2000/svg', svg=document.createElementNS(SVGNS,'svg'); co.appendChild(svg);
+LABELS.forEach(l=>{ const d=document.createElement('div'); d.className='co'+(l.side==='l'?' left':''); d.innerHTML='<b>'+l.t+'</b><span>'+l.s+'</span>'; co.appendChild(d); l.el=d;
+  l.line=document.createElementNS(SVGNS,'polyline'); l.dot=document.createElementNS(SVGNS,'circle'); l.dot.setAttribute('r','4'); svg.appendChild(l.line); svg.appendChild(l.dot); });
+
+const shelfItems=MODELS.map((m,i)=>({m,i,cur:{x:0,y:-.3,z:-.2,ry:m.yaw,rx:0,rz:0,s:1,e:0},sx:0,sy:0}));
+function shelfPose(it,t,narrow){
+  let d=it.i-sel; if(d>N/2)d-=N; if(d<-N/2)d+=N; const ad=Math.abs(d);
+  const bob=reduce?0:Math.sin(t*.0011+it.i)*.0018, sway=reduce?0:Math.sin(t*.0006+it.i*1.7)*7;
+  if(narrow){
+    const F=SFIT||{x:0,y:MOB.shelfY,z:MOB.shelfZ,s:MOB.big};
+    if(d===0) return {x:F.x,y:F.y+bob,z:F.z,ry:sway*.5,rx:3,rz:-3,s:F.s,e:0};
+    const z=F.z-.03, wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-z)/vh;   /* neighbours peek in from the screen edges */
+    return {x:Math.sign(d)*(vw*.6+(ad-1)*vw*.5)*wpp,y:F.y-.003+bob,z,ry:d*-34+sway,rx:5,rz:Math.sign(d)*-4,s:F.s*.86,e:0};
+  }
+  const gap=.072;
+  if(d===0) return {x:0,y:.012+bob,z:.02,ry:sway*.6,rx:3,rz:-4,s:1.0,e:0};
+  return {x:d*gap+Math.sign(d)*Math.max(0,ad-1)*.034,y:-ad*.006+bob,z:-ad*.045,ry:it.m.yaw+d*-16+sway,rx:5,rz:it.m.roll,s:.8,e:0};
+}
+function storyPose(sf,narrow,t,SC){
+  const i=clamp(Math.floor(sf),0,SC.length-1), j=clamp(i+1,0,SC.length-1), f=ease(clamp(sf-i,0,1));
+  const P=(k)=>Object.assign({},SC[k].p,narrow?SC[k].n:{});
+  const a=P(i), b=P(j), o={};
+  for(const k in a) o[k]=lerp(a[k],b[k],f);
+  if(!reduce){ o.ry+=Math.sin(t*.0005)*3; o.y+=Math.sin(t*.0009)*.0012; }
+  if(sf>SC.length-1) o.y+=(sf-(SC.length-1))*.12;   /* lift away into the specs */
+  return o;
+}
+function sceneBg(SC,k){ const b=SC[clamp(k,0,SC.length-1)].bg; return b==='w'?[MODELS[sel].glow,MODELS[sel].deep]:b; }
+
+function model(c,fam){ let m=M4.tr(c.x,c.y,c.z); m=M4.mul(m,M4.rz(c.rz*toRad)); m=M4.mul(m,M4.ry(c.ry*toRad)); m=M4.mul(m,M4.rx(c.rx*toRad)); return M4.mul(m,M4.sc(c.s*FAM[fam].sc)); }
+function toScreen(m,p){ const pv=M4.mul(proj,view); const q=M4.xf(M4.mul(pv,m),p); return [(q[0]/q[3]*.5+.5)*vw,(1-(q[1]/q[3]*.5+.5))*vh]; }
+/* phone: put the watch exactly in the middle of the free space between the header and the text, and size it to fit */
+function screenBox(c,AS){ const pvm=M4.mul(M4.mul(proj,view),model(c,AS.m.fam)); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const p of AS.mesh.pts){ const q=M4.xf(pvm,p); const sx=(q[0]/q[3]*.5+.5)*vw, sy=(1-(q[1]/q[3]*.5+.5))*vh; if(sx<x0)x0=sx; if(sx>x1)x1=sx; if(sy<y0)y0=sy; if(sy>y1)y1=sy; }
+  const o=M4.xf(pvm,[0,0,0]); return {x0,y0,x1,y1,ox:(o[0]/o[3]*.5+.5)*vw,oy:(1-(o[1]/o[3]*.5+.5))*vh}; }
+function fitPhone(tgt,sf,w,AS){
+  if(w<=0) return tgt;
+  const si=clamp(Math.round(sf),0,scenes.length-1), cp=scenes[si].firstElementChild.getBoundingClientRect();
+  const top=$('top').getBoundingClientRect().bottom+14, bot=Math.min(vh-20,cp.top-22);
+  const close=clamp(1.4-Math.abs(sf-CLOSE_I[AS.m.fam])*1.8,0,1);           /* dial close-up: centre the dial, let the bracelet run off screen */
+  return fitRegion(tgt,top,bot,vw-28,close,w,AS);
+}
+function fitRegion(tgt,top,bot,rw,close,w,AS){
+  const cx=vw/2, cy=(top+bot)/2, rh=Math.max(120,bot-top);
+  const o=Object.assign({},tgt);
+  let b=screenBox(o,AS); const f=clamp(Math.min(rh*.94/(b.y1-b.y0),rw/(b.x1-b.x0)),.6,1.6);
+  o.s*=lerp(1,lerp(f,1,close),w);
+  for(let it=0;it<2;it++){ b=screenBox(o,AS);
+    const px=lerp((b.x0+b.x1)/2,b.ox,close), py=lerp((b.y0+b.y1)/2,b.oy,close);
+    const wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-o.z)/vh;
+    o.x+=(cx-px)*wpp*w; o.y-=(cy-py)*wpp*w; }
+  return o;
+}
+function pick(e){
+  let best=null,bd=1e9; shelfItems.forEach(it=>{ const d=Math.hypot(it.sx-e.clientX,it.sy-e.clientY); if(d<bd){bd=d;best=it;} });
+  if(!best||bd>Math.min(160,vw*.18)) return;
+  if(best.i===sel) $('open').click(); else { sel=best.i; setUI(); }
+}
+
+const gCur={g1:hex(MODELS[0].glow),g2:hex(MODELS[0].deep)}; let tintCur=[1,1,1], openCur=0, prevT=performance.now();
+const mix3=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t)), css=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
+const glowEl=$('bg-glow'), wordEl=$('word'), shelfUI=$('shelf-ui'), loadEl=$('loading');
+function sfOf(y,vh){
+  const mid=y+vh/2; if(!centres.length) return 0;
+  if(mid<=centres[0]) return (mid-centres[0])/vh;
+  if(mid>=centres[centres.length-1]) return centres.length-1+(mid-centres[centres.length-1])/vh;
+  let i=0; while(mid>centres[i+1]) i++; return i+(mid-centres[i])/(centres[i+1]-centres[i]);
+}
+function frame(t){
+  requestAnimationFrame(frame);
+  const rdt=t-prevT; const dt=Math.min(DBG&&DBG.fast?1500:64,rdt); prevT=t; adapt(rdt); const k=1-Math.pow(.0018,dt/1000*1.6);
+  const y=window.scrollY, m0=MODELS[sel], SC=SCENES[m0.fam];
+  const enter=clamp((y-storyTop+vh*.85)/(vh*.85),0,1);                 /* 0 on the shelf, 1 inside the story */
+  const sf=sfOf(y,vh);                                                 /* 0 = first scene centred, 1 = second, … */
+  const inStory=enter>0.02, AS=assetOf(m0)?{m:m0,mesh:assetOf(m0).mesh}:null;
+  { const lh=!!AS; if(loadEl._h!==lh){ loadEl._h=lh; loadEl.hidden=lh; } }
+  /* backdrop */
+  const si=clamp(Math.round(sf),0,SC.length-1); const [g1,g2]=sceneBg(SC,si);
+  gCur.g1=mix3(gCur.g1,hex(g1),k*.8); gCur.g2=mix3(gCur.g2,hex(g2),k*.8);
+  glowEl.style.setProperty('--g1',css(gCur.g1)); glowEl.style.setProperty('--g2',css(gCur.g2)); glowEl.style.setProperty('--gx',narrow?'50%':(50+12*enter).toFixed(1)+'%');
+  /* scene copy fades */
+  { const op=clamp(1-enter*3,0,1); shelfUI.style.opacity=op.toFixed(3); shelfUI.style.visibility=op<.02?'hidden':'visible'; }
+  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.8-d*3.8:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
+    c.style.visibility=op<.01?'hidden':'visible'; c.style.transform=narrow?'translateY('+((sf-i)*-18).toFixed(1)+'px)':'translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
+  const wordOp=enter*Math.max(...SC.map((s,i)=>s.word?clamp(1.2-Math.abs(sf-i)*2,0,1):0));
+  wordEl.style.opacity=(wordOp).toFixed(3);
+  /* environment tint */
+  openCur+=(enter-openCur)*k; const tg=m0.fam==='prx'&&si===4?[.7,.82,1]:(m0.fam==='prx'&&si===5?[1,.9,.8]:m0.tint); tintCur=tintCur.map((v,i)=>v+(tg[i]-v)*k);
+
+  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST);
+  gl.uniformMatrix4fv(U.uP,false,proj); gl.uniformMatrix4fv(U.uV,false,view);
+  gl.uniform3fv(U.uCam,cam); gl.uniform3fv(U.uTint,tintCur); gl.uniform1f(U.uOpen,openCur);
+
+  /* phone shelf: centre watch fitted between the header and the shelf buttons */
+  SFIT=null;
+  if(narrow&&AS){ const top=$('top').getBoundingClientRect().bottom+8, bot=shelfUI.getBoundingClientRect().top-14;
+    SFIT=fitRegion({x:0,y:0,z:MOB.shelfZ,ry:0,rx:3,rz:-3,s:MOB.big,e:0},top,bot,vw*.6,0,1,AS); }
+  const sp=storyPose(sf,narrow,t,SC), mats=[];
+  shelfItems.forEach(it=>{
+    let tgt=shelfPose(it,t,narrow), snap=false;
+    if(DBG&&DBG.p){ tgt=it.i===sel?Object.assign({x:0,y:0,z:0,ry:0,rx:0,rz:0,s:1,e:0},DBG.p):{x:0,y:-.4,z:0,ry:0,rx:0,rz:0,s:1,e:0}; snap=true; }
+    else if(it.i===sel){ if(inStory){ const o={}; for(const kk in tgt) o[kk]=lerp(tgt[kk],sp[kk],enter); tgt=o; if(narrow&&AS) tgt=fitPhone(tgt,sf,ease(enter)*clamp((SC.length-.5-sf)*2,0,1),AS); } }
+    else if(enter>0){ tgt=narrow?Object.assign({},tgt,{x:tgt.x+Math.sign(tgt.x)*enter*.09,ry:tgt.ry+Math.sign(tgt.x)*enter*30})
+                                 :Object.assign({},tgt,{y:lerp(tgt.y,-.25,enter),z:tgt.z-enter*.1,rx:tgt.rx+enter*40}); }
+    const c=it.cur; for(const kk in tgt) c[kk]=snap?tgt[kk]:c[kk]+(tgt[kk]-c[kk])*k;
+    const mm=model(c,it.m.fam); const s=toScreen(mm,[0,0,0]); it.sx=s[0]; it.sy=s[1]; mats.push(mm);
+  });
+  /* callouts for the exploded view (PRX, desktop) */
+  const cm=mats[sel];
+  const coOp=m0.fam==='prx'&&!narrow?enter*clamp(1.25-Math.abs(sf-ANAT_I.prx)*2.6,0,1):0; co.style.opacity=coOp.toFixed(3);
+  if(coOp>0){ /* two label columns beside the watch, leader lines run to each part (Ultra-style) */
+    const colR=vw*.79, colL=vw*.35, gapY=50, topY=90, botY=vh*.62;
+    const pts=LABELS.map(l=>({l,p:toScreen(cm,l.a)}));
+    ['r','l'].forEach(side=>{
+      const col=pts.filter(o=>o.l.side===side).sort((a,b)=>a.p[1]-b.p[1]); let lastY=-1e9;
+      col.forEach(o=>{ o.y=Math.max(clamp(o.p[1],topY,botY),lastY+gapY); lastY=o.y; });
+    });
+    pts.forEach(o=>{ const el=o.l.el, h=el.offsetHeight, w=el.offsetWidth, r=o.l.side==='r';
+      const cx=r?colR:colL, bend=r?cx-28:cx+28;
+      o.l.dot.setAttribute('cx',o.p[0].toFixed(1)); o.l.dot.setAttribute('cy',o.p[1].toFixed(1));
+      o.l.line.setAttribute('points',o.p[0].toFixed(1)+','+o.p[1].toFixed(1)+' '+bend.toFixed(1)+','+o.y.toFixed(1)+' '+cx.toFixed(1)+','+o.y.toFixed(1));
+      el.style.transform='translate('+(r?cx+8:cx-w-8).toFixed(1)+'px,'+(o.y-h/2).toFixed(1)+'px)';
+    });
+  }
+  for(const pass of [0,1]){
+    if(pass){ gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); } else { gl.disable(gl.BLEND); gl.depthMask(true); }
+    shelfItems.forEach((it,ii)=>{
+      if(it.cur.y<-.2||Math.abs(it.cur.x)>.2) return;
+      const as=assetOf(it.m); if(!as) return; const ms=as.mesh, bell=ms.kind==='bell';
+      if(bell&&!pass&&CULL) gl.enable(gl.CULL_FACE); else gl.disable(gl.CULL_FACE);
+      gl.uniformMatrix4fv(U.uM,false,mats[ii]); gl.uniform1f(U.uExplode,it.cur.e);
+      gl.uniform3fv(U.uCenter,ms.center); gl.uniform1f(U.uHalf,ms.half); gl.uniform2fv(U.uUvMap,ms.uvMap); gl.uniform1i(U.uHasAO,1); gl.uniform1f(U.uExpScale,ms.expScale);
+      gl.uniform1f(U.uExp,bell?BELL_EXP:1.05); gl.uniform1f(U.uDG,bell&&DBG&&DBG.dg!=null?DBG.dg:(bell?1:1)); gl.uniform1f(U.uDA,DBG&&DBG.da!=null?DBG.da:.75);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,ENG); gl.uniform1i(U.uEng,2);
+      if(bell){ gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,as.eb); gl.uniform1i(U.uEngB,3);
+        gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D,as.tex.dt); gl.uniform1i(U.uDT,4);
+        gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D,as.tex.dm); gl.uniform1i(U.uDM,5); gl.uniform2fv(U.uMid,BELL_MID[it.m.mk]); gl.uniform1f(U.uDMK,DBG&&DBG.dmk!=null?DBG.dmk:(it.m.mk==='b22'?.2:1)); }
+      else { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,as.tex.a); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,as.tex.m); gl.uniform1i(U.uTex,0); gl.uniform1i(U.uMR,1); }
+      const dv=DIAL[it.m.dk]||DIAL.silver;
+      ms.draws.forEach(d=>{
+        if(!!pass!==d.blend) return;
+        gl.uniform4fv(U.uBase,d.base); gl.uniform1f(U.uMetal,d.metal); gl.uniform1f(U.uRough,d.rough); gl.uniform1i(U.uRole,d.role);
+        gl.uniform1i(U.uTextured,d.textured?1:0); gl.uniform1i(U.uRecolor,dv.recolor); gl.uniform1i(U.uDesat,dv.desat);
+        gl.uniform3fv(U.uDialBg,dv.bg); gl.uniform3fv(U.uDialInk,dv.ink); gl.uniform3fv(U.uDialMR,dv.mr);
+        gl.bindVertexArray(d.vao); gl.drawElements(gl.TRIANGLES,d.icount,d.itype,0);
+      });
+    });
+  }
+  gl.depthMask(true); gl.bindVertexArray(null);
+}
+let BELL_EXP=1.05; const CULL=!(DBG&&DBG.nocull);
+if(DBG&&DBG.exp) BELL_EXP=DBG.exp;
+measure(); setUI();
+{ const first=MODELS[sel]; ensureMesh(first); }
+requestAnimationFrame(frame);
+/* preload the rest after the first model is on screen */
+setTimeout(()=>{ MODELS.forEach(m=>ensureMesh(m)); },DBG?0:1200);
+window.__wp={get sel(){return sel;}, set sel(v){sel=v;setUI();}, MODELS, ASSET};
+})();
+</script>
+</body></html>
