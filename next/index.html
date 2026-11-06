@@ -121,11 +121,14 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .story[hidden]{display:none}
+.scrim{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;display:none;background:linear-gradient(180deg,rgba(8,9,11,.6) 0,rgba(8,9,11,0) 13%,rgba(8,9,11,0) 52%,rgba(8,9,11,.86) 100%)}
+@media (max-width:720px){.scrim{display:block}}
 </style>
 </head><body>
 
 <div class="bg" aria-hidden="true"><i class="glow" id="bg-glow"></i></div>
 <canvas id="stage" aria-label="Часы Tissot в 3D"></canvas>
+<div class="scrim" id="scrim" aria-hidden="true"></div>
 <div class="loading" id="loading">ЗАГРУЖАЕМ ЧАСЫ…</div>
 <div class="word" id="word" aria-hidden="true">PRX</div>
 <div class="callouts" id="callouts" aria-hidden="true"></div>
@@ -627,7 +630,7 @@ const SCENES={
  bell:[
   {p:{x:.03,y:0,z:.03,ry:-22,rx:8,rz:-22,s:1.15,e:0},n:{x:0,y:0.026,z:.0,s:1.0},bg:'w',word:1},
   {p:{x:.05,y:.002,z:.02,ry:84,rx:4,rz:0,s:1.25,e:0},n:{x:0,y:0.034,z:-.02,s:1.0},bg:['#3a3d45','#0c0d10']},
-  {p:{x:.0,y:-.003,z:.2,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.095},bg:'w'},
+  {p:{x:.0,y:-.003,z:.2,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.22},bg:'w'},
   {p:{x:.035,y:0,z:.03,ry:-32,rx:-38,rz:-12,s:1.1,e:0},n:{x:0,y:0.04,z:-.01,s:1.0},bg:['#2a2d35','#0a0b0e']},
   {p:{x:.04,y:0,z:.03,ry:-160,rx:-10,rz:8,s:1.2,e:0},n:{x:0,y:0.034,z:-.02,s:1.0},bg:['#1d4f9e','#05132a']},
   {p:{x:.04,y:0,z:.02,ry:-180,rx:8,rz:0,s:1.25,e:0},n:{x:0,y:0.034,z:.0,s:1.0},bg:['#4a3b30','#120d0a']},
@@ -705,7 +708,7 @@ function pick(e){
 
 const gCur={g1:hex(MODELS[0].glow),g2:hex(MODELS[0].deep)}; let tintCur=[1,1,1], openCur=0, prevT=performance.now();
 const mix3=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t)), css=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
-const glowEl=$('bg-glow'), wordEl=$('word'), shelfUI=$('shelf-ui'), loadEl=$('loading');
+const scrimEl=$('scrim'), glowEl=$('bg-glow'), wordEl=$('word'), shelfUI=$('shelf-ui'), loadEl=$('loading');
 function sfOf(y,vh){
   const mid=y+vh/2; if(!centres.length) return 0;
   if(mid<=centres[0]) return (mid-centres[0])/vh;
@@ -728,6 +731,7 @@ function frame(t){
   { const op=clamp(1-enter*3,0,1); shelfUI.style.opacity=op.toFixed(3); shelfUI.style.visibility=op<.02?'hidden':'visible'; }
   scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.8-d*3.8:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
     c.style.visibility=op<.01?'hidden':'visible'; c.style.transform=narrow?'translateY('+((sf-i)*-18).toFixed(1)+'px)':'translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
+  scrimEl.style.opacity=(narrow?clamp(enter*1.4,0,1):0).toFixed(2);
   const wordOp=enter*Math.max(...SC.map((s,i)=>s.word?clamp(1.2-Math.abs(sf-i)*2,0,1):0));
   wordEl.style.opacity=(wordOp).toFixed(3);
   /* environment tint */
