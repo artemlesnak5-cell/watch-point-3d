@@ -1,6 +1,5 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Часы Tissot PRX в 3D: полка, анатомия и характеристики. Личный некоммерческий проект Watch Point.">
-<title>Watch Point 3D</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Часы Tissot PRX и Bellissima: фотореалистичные кадры, анатомия и характеристики. Личный некоммерческий проект Watch Point.">
+<title>Watch Point</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600&display=swap">
 <style>
@@ -21,10 +20,9 @@ button{font:inherit;color:inherit}
 /* fixed backdrop + canvas */
 .bg{position:fixed;inset:0;z-index:0;background:var(--night)}
 .bg i{position:absolute;inset:0;display:block}
-.bg .studio{background:radial-gradient(26% 40% at 50% 36%,rgba(255,255,255,.55),rgba(255,255,255,0)),radial-gradient(70% 75% at 50% 28%,var(--studio-hi) 0%,var(--studio-mid) 46%,var(--studio-lo) 100%)}
-.bg .glow{background:radial-gradient(55% 65% at var(--gx,62%) 50%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 55%,var(--night) 100%)}
-#gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;touch-action:pan-y}
-.loading{position:fixed;inset:0;display:grid;place-items:center;font-size:13px;letter-spacing:.16em;z-index:3;pointer-events:none;color:var(--ink)}
+.bg .glow{background:radial-gradient(55% 65% at var(--gx,50%) 50%,var(--g1,#2e8a5f) 0%,var(--g2,#0b2a1f) 55%,var(--night) 100%)}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;touch-action:pan-y}
+.loading{position:fixed;inset:0;display:grid;place-items:center;font-size:13px;letter-spacing:.16em;z-index:3;pointer-events:none;color:var(--paper)}
 .loading[hidden]{display:none}
 .page{position:relative;z-index:2;pointer-events:none}
 .page a,.page button,.page [data-live]{pointer-events:auto}
@@ -120,17 +118,19 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
   .card{padding:28px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.story[hidden]{display:none}
 </style>
 </head><body>
 
-<div class="bg" aria-hidden="true"><i class="glow" id="bg-glow"></i><i class="studio" id="bg-studio"></i></div>
-<canvas id="gl" aria-label="Часы Tissot PRX в 3D"></canvas>
-<div class="loading" id="loading">ЗАГРУЖАЕМ 3D…</div>
+<div class="bg" aria-hidden="true"><i class="glow" id="bg-glow"></i></div>
+<canvas id="stage" aria-label="Часы Tissot — фотореалистичные кадры"></canvas>
+<div class="loading" id="loading">ЗАГРУЖАЕМ ЧАСЫ…</div>
 <div class="word" id="word" aria-hidden="true">PRX</div>
 <div class="callouts" id="callouts" aria-hidden="true"></div>
 
-<header class="top" id="top">
-  <button class="brand" type="button" id="home"><b>WATCH POINT</b><span>ЧАСЫ TISSOT В 3D</span></button>
+<header class="top dark" id="top">
+  <button class="brand" type="button" id="home"><b>WATCH POINT</b><span>ЧАСЫ TISSOT</span></button>
   <a class="pill" href="https://t.me/watchpoint_manager" target="_blank" rel="noopener">Telegram автора <span aria-hidden="true">↗</span></a>
 </header>
 
@@ -147,22 +147,22 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
     <span class="hint">ЛИСТАЙТЕ СВАЙПОМ ИЛИ СТРЕЛКАМИ · ВНИЗ — РАЗБОР</span>
   </section>
 
-  <main class="story" id="story">
-    <section class="scene" data-scene="0">
+  <main class="story" id="story-prx" data-fam="prx">
+    <section class="scene">
       <div class="copy">
-        <span class="eyebrow" id="s0-eyebrow">Tissot PRX · T137.410.11.091.00</span>
+        <span class="eyebrow" id="p0-eyebrow">Tissot PRX · T137.410.11.091.00</span>
         <h2>Ретро 1978 года. Сделано для сегодня.</h2>
-        <p id="s0-lead">Стальной корпус-«телевизор» и браслет, который переходит прямо в корпус.</p>
+        <p id="p0-lead">Стальной корпус-«телевизор» и браслет, который переходит прямо в корпус.</p>
       </div>
     </section>
-    <section class="scene" data-scene="1">
+    <section class="scene">
       <div class="copy">
-        <div class="big"><span data-count="10.4" data-dec="1">10,4</span><small>мм</small></div>
+        <div class="big"><span>10,4</span><small>мм</small></div>
         <h2>Тонкий профиль.</h2>
         <p>Корпус из стали 316L толщиной 10,4 мм при диаметре 40 мм. Часы не цепляются за манжету и легко уходят под рукав.</p>
       </div>
     </section>
-    <section class="scene low" data-scene="2">
+    <section class="scene low">
       <div class="copy">
         <span class="eyebrow">Анатомия</span>
         <h2>Сапфир и сталь.</h2>
@@ -172,40 +172,86 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
         </ul>
       </div>
     </section>
-    <section class="scene low" data-scene="3">
+    <section class="scene low">
       <div class="copy">
         <span class="eyebrow">Циферблат крупным планом</span>
-        <h2 id="s3-title">Солнечные лучи.</h2>
-        <p id="s3-text">Рисунок расходится от центра и ловит свет при каждом повороте руки.</p>
+        <h2>Солнечные лучи.</h2>
+        <p id="p3-text">Рисунок расходится от центра и ловит свет при каждом повороте руки.</p>
       </div>
     </section>
-    <section class="scene" data-scene="4">
+    <section class="scene">
       <div class="copy">
-        <div class="big"><span data-count="100" data-dec="0">100</span><small>м</small></div>
+        <div class="big"><span>100</span><small>м</small></div>
         <h2>10 бар защиты от воды.</h2>
         <p>Водозащита до 10 бар — запас для повседневной жизни: дождь, брызги, мытьё рук.</p>
       </div>
     </section>
-    <section class="scene" data-scene="5">
+    <section class="scene">
       <div class="copy">
-        <div class="big"><span data-count="130" data-dec="0">130</span><small>г</small></div>
+        <div class="big"><span>130</span><small>г</small></div>
         <h2>Вес настоящей стали.</h2>
-        <p>Закрытая стальная крышка, браслет с застёжкой-бабочкой и системой быстрой смены.</p>
+        <p>Закрытая стальная крышка с гравировкой, браслет с застёжкой-бабочкой TISSOT 1853.</p>
       </div>
     </section>
-    <section class="scene" data-scene="6">
+    <section class="scene">
       <div class="copy">
         <span class="eyebrow">Один корпус</span>
         <h2>Четыре циферблата.</h2>
         <p>Выберите цвет — часы перекрасятся прямо здесь.</p>
-        <div class="swatches" id="swatches" data-live role="group" aria-label="Цвет циферблата"></div>
+        <div class="swatches" id="swatches-prx" data-live role="group" aria-label="Цвет циферблата"></div>
       </div>
     </section>
-    <section class="scene center low" data-scene="7">
+    <section class="scene center low">
       <div class="copy">
         <span class="eyebrow">Tissot PRX 40 мм</span>
         <h2>Носите каждый день.</h2>
         <p>Полный список характеристик — ниже. Вопросы и новые разборы — в Telegram.</p>
+      </div>
+    </section>
+  </main>
+
+  <main class="story" id="story-bell" data-fam="bell" hidden>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow" id="b0-eyebrow">Tissot Bellissima · T126.010.22.013.01</span>
+        <h2>Маленькие часы с характером.</h2>
+        <p id="b0-lead">Корпус 26 мм, лента полированной стали обтекает циферблат и уходит к головке.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>6,85</span><small>мм</small></div>
+        <h2>Почти невесомые.</h2>
+        <p>Толщина 6,85 мм и 59 граммов вместе с браслетом — часы, которые не чувствуешь на руке.</p>
+      </div>
+    </section>
+    <section class="scene low">
+      <div class="copy">
+        <span class="eyebrow">Циферблат крупным планом</span>
+        <h2 id="b2-title">Гильоше в форме розы.</h2>
+        <p id="b2-text">Волнистый узор в центре, римские цифры и круглое окошко даты на шести часах.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow">Браслет</span>
+        <h2 id="b3-title">Пять рядов звеньев.</h2>
+        <p id="b3-text">Сталь и розовое золото PVD чередуются, как кирпичная кладка, и мягко облегают запястье.</p>
+      </div>
+    </section>
+    <section class="scene">
+      <div class="copy">
+        <div class="big"><span>50</span><small>м</small></div>
+        <h2>Сапфир и 5 бар.</h2>
+        <p>Сапфировое стекло с антибликовым покрытием и водозащита до 5 бар для каждого дня.</p>
+      </div>
+    </section>
+    <section class="scene center low">
+      <div class="copy">
+        <span class="eyebrow">Tissot Bellissima 26 мм</span>
+        <h2>Два характера.</h2>
+        <p>Розовое золото с серебряным гильоше или сталь с голубым перламутром.</p>
+        <div class="swatches" id="swatches-bell" data-live role="group" aria-label="Вариант Bellissima"></div>
       </div>
     </section>
   </main>
@@ -218,17 +264,17 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
           <thead><tr><th></th><th>PRX 40 мм</th><th>Bellissima 26 мм</th></tr></thead>
           <tbody>
             <tr><th scope="row">Диаметр</th><td>40 мм</td><td>26 мм</td></tr>
-            <tr><th scope="row">Толщина</th><td>10,4 мм</td><td>6,85–6,9 мм</td></tr>
+            <tr><th scope="row">Толщина</th><td>10,4 мм</td><td>6,85 мм</td></tr>
             <tr><th scope="row">Водозащита</th><td>10 бар (100 м)</td><td>5 бар (50 м)</td></tr>
             <tr><th scope="row">Механизм</th><td>Кварц, 3 стрелки, дата</td><td>Кварц, 3 стрелки, дата</td></tr>
-            <tr><th scope="row">Стекло</th><td>Сапфировое</td><td>Сапфировое</td></tr>
-            <tr><th scope="row">Корпус и браслет</th><td>Сталь 316L, застёжка-бабочка</td><td>Сталь 316L, застёжка-бабочка</td></tr>
-            <tr><th scope="row">Вес</th><td>130 г</td><td>59 г (перламутр)</td></tr>
+            <tr><th scope="row">Стекло</th><td>Сапфировое</td><td>Сапфировое, антибликовое</td></tr>
+            <tr><th scope="row">Корпус и браслет</th><td>Сталь 316L, застёжка-бабочка</td><td>Сталь 316L (PVD розовое золото у .22.013.01), застёжка-бабочка</td></tr>
+            <tr><th scope="row">Вес</th><td>130 г</td><td>59 г</td></tr>
             <tr><th scope="row">Подсветка</th><td>Super-LumiNova® на стрелках</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="src">По данным официальных карточек Tissot. 3D-модель — иллюстрация.</p>
+      <p class="src">По данным официальных карточек Tissot. Изображения — компьютерный рендер, иллюстрация.</p>
     </section>
     <section class="wrap author">
       <div class="card">
@@ -240,423 +286,210 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
         <a class="tg" href="https://t.me/watchpoint_manager" target="_blank" rel="noopener">@watchpoint_manager <span aria-hidden="true">↗</span></a>
       </div>
     </section>
-    <footer><div class="wrap"><p>© Watch Point — личный некоммерческий проект. Не является официальным сайтом Tissot; товарные знаки принадлежат их правообладателю. Изображения и 3D-модели — в информационных целях; по запросу правообладателя будут удалены.</p></div></footer>
+    <footer><div class="wrap"><p>© Watch Point — личный некоммерческий проект. Не является официальным сайтом Tissot; товарные знаки принадлежат их правообладателю. Изображения — компьютерная графика в информационных целях; по запросу правообладателя будут удалены.</p></div></footer>
   </div>
 </div>
 
 <script>
 (function(){
 'use strict';
-const W=[
-  {key:'green',short:'зелёный',ref:'T137.410.11.091.00',glow:'#2e8a5f',deep:'#0b2a1f',tint:[.75,1,.85],yaw:24,roll:9,
-   lead:'Светло-зелёный циферблат и интегрированный стальной браслет — самый яркий PRX на полке.',
+/* Pre-rendered (Blender Cycles) frames drawn on a 2D canvas.
+   frames/<key>/NNN.webp — scroll story, frames/shelf/<key>-JJ.webp — shelf sway (19 yaw steps, -45..+45 deg). */
+const MODELS=[
+  {key:'prx-green', fam:'prx', name:'PRX зелёный', short:'Зелёный', ref:'T137.410.11.091.00', glow:'#1f7a52', deep:'#082419', sw:'#0b5a3c',
+   lead:'Глубокий зелёный циферблат и интегрированный стальной браслет — самый яркий PRX на полке.',
    dial:'Зелёный циферблат с «солнечными лучами»: оттенок меняется от светлого к глубокому при каждом повороте руки.'},
-  {key:'blue',short:'синий',ref:'T137.410.11.041.00',glow:'#3567b5',deep:'#09172e',tint:[.75,.85,1],yaw:-28,roll:-11,
+  {key:'prx-blue', fam:'prx', name:'PRX синий', short:'Синий', ref:'T137.410.11.041.00', glow:'#2f5fae', deep:'#08152b', sw:'#12305a',
    lead:'Самый узнаваемый PRX: синий циферблат и строгая геометрия корпуса-«телевизора».',
    dial:'Синий циферблат с «солнечными лучами» и светлыми метками. Стрелки Super-LumiNova® читаются и ночью.'},
-  {key:'silver',short:'серебро',ref:'T137.410.11.031.00',glow:'#8d96a6',deep:'#1b1d22',tint:[1,.95,.92],yaw:18,roll:-7,
+  {key:'prx-silver', fam:'prx', name:'PRX серебро', short:'Серебро', ref:'T137.410.11.031.00', glow:'#8d96a6', deep:'#1b1d22', sw:'#d9dadc',
    lead:'Самый спокойный вариант линии: светлый циферблат и к костюму, и к футболке.',
-   dial:'Серебристый циферблат с розово-золотистыми метками и стрелками. Тёплые акценты на холодной стали.'},
-  {key:'black',short:'чёрный',ref:'T137.410.11.051.00',glow:'#55575f',deep:'#0a0a0b',tint:[.9,.9,.95],yaw:-20,roll:12,
+   dial:'Серебристый циферблат с «солнечными лучами»: светлый, спокойный, легко читается.'},
+  {key:'prx-black', fam:'prx', name:'PRX чёрный', short:'Чёрный', ref:'T137.410.11.051.00', glow:'#55575f', deep:'#0a0a0b', sw:'#222326',
    lead:'Контраст на максимум: чёрный циферблат и полированные грани стали.',
-   dial:'Глубокий чёрный циферблат: белые метки и стрелки читаются с одного взгляда.'}
+   dial:'Глубокий чёрный циферблат: белые метки и стрелки читаются с одного взгляда.'},
+  {key:'bell-b22', fam:'bell', name:'Bellissima розовое золото', short:'Розовое золото', ref:'T126.010.22.013.01', glow:'#b9826a', deep:'#2a1712', sw:'#d9a48c',
+   lead:'Корпус 26 мм, лента полированной стали обтекает циферблат, безель и головка — розовое золото PVD.',
+   dialT:'Гильоше в форме розы.', dial:'Серебристый циферблат с волнистым гильоше, чёрные римские цифры и круглое окошко даты.',
+   braT:'Пять рядов звеньев.', bra:'Сталь и розовое золото PVD чередуются, как кирпичная кладка, и мягко облегают запястье.'},
+  {key:'bell-b11', fam:'bell', name:'Bellissima перламутр', short:'Голубой перламутр', ref:'T126.010.11.133.00', glow:'#5b8fb4', deep:'#0b1a26', sw:'#8fb8d6',
+   lead:'Корпус 26 мм из полированной стали и голубой перламутровый циферблат с накладными римскими цифрами.',
+   dialT:'Голубой перламутр.', dial:'Перламутр переливается при каждом повороте, накладные римские цифры ловят свет.',
+   braT:'Пять рядов стали.', bra:'Полированные звенья в пять рядов, смещённые как кирпичная кладка, мягко облегают запястье.'}
 ];
-const N=W.length, $=(id)=>document.getElementById(id);
-const canvas=$('gl'), storyEl=$('story'), shelfEl=$('shelf');
+const FAM={prx:{story:'story-prx',word:'PRX',steps:14,zoom:1},bell:{story:'story-bell',word:'BELLISSIMA',steps:14,zoom:1.32}};
+const zoomR=(r,z)=>z===1?r:{x:r.x+r.w*(1-z)/2,y:r.y+r.h*(1-z)/2,w:r.w*z,h:r.h*z};
+const SHELF_N=19, SHELF_MID=9;
+const $=(id)=>document.getElementById(id);
+const cv=$('stage'), ctx=cv.getContext('2d');
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const toRad=Math.PI/180;
-let sel=0, SFIT=null;
-if('scrollRestoration' in history) history.scrollRestoration='manual';   /* always open on the shelf */
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)), lerp=(a,b,t)=>a+(b-a)*t, ease=t=>t*t*(3-2*t);
+if('scrollRestoration' in history) history.scrollRestoration='manual';
 window.scrollTo(0,0);
+let sel=0;
+
+/* ---------- images ---------- */
+const cache=new Map();
+function img(url,prio){ let im=cache.get(url); if(!im){ im=new Image(); im.decoding='async'; if(prio) im.fetchPriority='high'; im.src=url; cache.set(url,im); im.onload=()=>{im._ok=1;}; } return im; }
+const ok=im=>im&&im._ok&&im.naturalWidth>0;
+const pad=(n,k)=>String(n).padStart(k,'0');
+const shelfURL=(m,j)=>'frames/shelf/'+m.key+'-'+pad(j,2)+'.webp';
+const frameURL=(m,i)=>'frames/'+m.key+'/'+pad(i,3)+'.webp';
+const META={};
+function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; queueStory(m);}).catch(()=>{}); } return META[m.key]; }
+let storyQueue=[];
+function queueStory(m){ const mt=META[m.key]; if(!mt||!mt.frames) return; const st=mt.steps||14, n=mt.frames, order=[];
+  for(let i=0;i<n;i+=st) order.push(i); for(let s=Math.floor(st/2);s>=1;s=Math.floor(s/2)) for(let i=0;i<n;i+=s) if(!order.includes(i)) order.push(i); for(let i=0;i<n;i++) if(!order.includes(i)) order.push(i);
+  storyQueue=order.map(i=>frameURL(m,i)); pump(); }
+let inflight=0;
+function pump(){ while(inflight<6&&storyQueue.length){ const u=storyQueue.shift(); if(cache.has(u)) continue; inflight++; const im=img(u); im.addEventListener('load',()=>{inflight--;pump();},{once:true}); im.addEventListener('error',()=>{inflight--;pump();},{once:true}); } }
+MODELS.forEach(m=>{ for(let j=0;j<SHELF_N;j+=2) img(shelfURL(m,j)); img(shelfURL(m,SHELF_MID),true); meta(m); });
+function nearestFrame(m,f){ const mt=META[m.key]; const n=mt.frames||1; const i0=clamp(Math.round(f),0,n-1);
+  for(let d=0;d<n;d++){ for(const i of [i0-d,i0+d]){ if(i<0||i>=n) continue; const im=cache.get(frameURL(m,i)); if(ok(im)) return im; } } return null; }
+function shelfImg(m,j){ j=clamp(Math.round(j),0,SHELF_N-1); for(let d=0;d<SHELF_N;d++){ for(const k of [j-d,j+d]){ if(k<0||k>=SHELF_N) continue; const im=cache.get(shelfURL(m,k))||img(shelfURL(m,k)); if(ok(im)) return im; } } return null; }
 
 /* ---------- UI ---------- */
-const scenes=[...document.querySelectorAll('.scene')];
-const counters=[...document.querySelectorAll('[data-count]')];
-W.forEach((w,i)=>{
-  const b=document.createElement('button'); b.type='button'; b.className='sw';
-  b.innerHTML='<i style="background:'+w.glow+'"></i>'+w.short[0].toUpperCase()+w.short.slice(1);
-  b.addEventListener('click',()=>{sel=i;setUI();});
-  $('swatches').appendChild(b);
-});
+const stories={prx:$('story-prx'),bell:$('story-bell')};
+const famScenes=f=>[...stories[f].querySelectorAll('.scene')];
+function buildSwatches(fam,el){ MODELS.forEach((m,i)=>{ if(m.fam!==fam) return; const b=document.createElement('button'); b.type='button'; b.className='sw'; b.dataset.i=i;
+  b.innerHTML='<i style="background:'+m.sw+'"></i>'+m.short; b.onclick=()=>{sel=i;setUI();}; el.appendChild(b); }); }
+buildSwatches('prx',$('swatches-prx')); buildSwatches('bell',$('swatches-bell'));
+let curFam=null;
 function setUI(){
-  const w=W[sel];
-  $('label').innerHTML='PRX '+w.short+'<small>'+w.ref+'</small>';
-  $('s0-eyebrow').textContent='Tissot PRX · '+w.ref; $('s0-lead').textContent=w.lead;
-  $('s3-text').textContent=w.dial;
-  document.querySelectorAll('.sw').forEach((b,i)=>b.setAttribute('aria-pressed',i===sel?'true':'false'));
+  const m=MODELS[sel];
+  $('label').innerHTML=m.name+'<small>'+m.ref+'</small>';
+  if(m.fam==='prx'){ $('p0-eyebrow').textContent='Tissot PRX · '+m.ref; $('p0-lead').textContent=m.lead; $('p3-text').textContent=m.dial; }
+  else { $('b0-eyebrow').textContent='Tissot Bellissima · '+m.ref; $('b0-lead').textContent=m.lead; $('b2-title').textContent=m.dialT; $('b2-text').textContent=m.dial; $('b3-title').textContent=m.braT; $('b3-text').textContent=m.bra; }
+  document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i===sel?'true':'false'));
+  if(curFam!==m.fam){ curFam=m.fam; for(const f in stories) stories[f].hidden=(f!==m.fam); $('word').textContent=FAM[m.fam].word; measure(); }
+  meta(m); queueStory(m);
 }
-function step(d){ sel=(sel+d+N)%N; setUI(); }
+function step(d){ sel=(sel+d+MODELS.length)%MODELS.length; setUI(); }
 $('prev').onclick=()=>step(-1); $('next').onclick=()=>step(1);
-$('open').onclick=()=>window.scrollTo({top:storyEl.offsetTop,behavior:reduce?'auto':'smooth'});
+$('open').onclick=()=>window.scrollTo({top:stories[curFam].offsetTop,behavior:reduce?'auto':'smooth'});
 $('home').onclick=()=>window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
 document.addEventListener('keydown',e=>{ if(window.scrollY>innerHeight*.5) return; if(e.key==='ArrowRight') step(1); if(e.key==='ArrowLeft') step(-1); });
 let lastWheel=0;
-window.addEventListener('wheel',e=>{ /* horizontal swipe on the shelf flips watches; vertical scroll goes down the page */
-  if(window.scrollY>innerHeight*.4||Math.abs(e.deltaX)<=Math.abs(e.deltaY)) return;
-  const now=performance.now(); if(Math.abs(e.deltaX)<8||now-lastWheel<520) return; lastWheel=now; step(e.deltaX>0?1:-1);
-},{passive:true});
-/* mouse: drag or click on the shelf */
+window.addEventListener('wheel',e=>{ if(window.scrollY>innerHeight*.4||Math.abs(e.deltaX)<=Math.abs(e.deltaY)) return;
+  const now=performance.now(); if(Math.abs(e.deltaX)<8||now-lastWheel<520) return; lastWheel=now; step(e.deltaX>0?1:-1); },{passive:true});
 let drag=null;
-canvas.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||window.scrollY>innerHeight*.3) return; drag={x:e.clientX,y:e.clientY}; });
+cv.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||window.scrollY>innerHeight*.3) return; drag={x:e.clientX,y:e.clientY}; });
 window.addEventListener('pointerup',e=>{ if(!drag||e.pointerType!=='mouse') return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag=null;
-  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5) step(dx<0?1:-1); else if(Math.hypot(dx,dy)<6) pick(e); });
-/* touch: a swipe flips watches only if it is clearly sideways and the page did not scroll meanwhile */
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5) step(dx<0?1:-1); else if(Math.hypot(dx,dy)<6) pick(e.clientX); });
 let tch=null;
-canvas.addEventListener('touchstart',e=>{ if(e.touches.length!==1||window.scrollY>innerHeight*.3){tch=null;return;} const q=e.touches[0]; tch={x:q.clientX,y:q.clientY,sy:window.scrollY,t:performance.now()}; },{passive:true});
-canvas.addEventListener('touchcancel',()=>{tch=null;},{passive:true});
-canvas.addEventListener('touchend',e=>{ if(!tch) return; const q=e.changedTouches[0], dx=q.clientX-tch.x, dy=q.clientY-tch.y, scrolled=Math.abs(window.scrollY-tch.sy), dt=performance.now()-tch.t; tch=null;
-  if(scrolled>4) return;
-  if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.6) step(dx<0?1:-1);
-  else if(Math.hypot(dx,dy)<8&&dt<350) pick(q); },{passive:true});
+cv.addEventListener('touchstart',e=>{ if(e.touches.length!==1||window.scrollY>innerHeight*.3){tch=null;return;} const q=e.touches[0]; tch={x:q.clientX,y:q.clientY,sy:window.scrollY,t:performance.now()}; },{passive:true});
+cv.addEventListener('touchcancel',()=>{tch=null;},{passive:true});
+cv.addEventListener('touchend',e=>{ if(!tch) return; const q=e.changedTouches[0], dx=q.clientX-tch.x, dy=q.clientY-tch.y, scrolled=Math.abs(window.scrollY-tch.sy), dt=performance.now()-tch.t; tch=null;
+  if(scrolled>4) return; if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.6) step(dx<0?1:-1); else if(Math.hypot(dx,dy)<8&&dt<350) pick(q.clientX); },{passive:true});
+let shelfHits=[];
+function pick(x){ let best=null,bd=1e9; shelfHits.forEach(h=>{ const d=Math.abs(h.cx-x); if(d<bd){bd=d;best=h;} }); if(!best) return; if(best.i===sel) $('open').click(); else { sel=best.i; setUI(); } }
 
-/* ---------- math ---------- */
-const M4={
-  id(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];},
-  mul(a,b){const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];o[c*4+r]=s;}return o;},
-  persp(f,a,n,fa){const t=1/Math.tan(f/2);return [t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];},
-  tr(x,y,z){return [1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1];},
-  rx(a){const c=Math.cos(a),s=Math.sin(a);return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1];},
-  ry(a){const c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];},
-  rz(a){const c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];},
-  sc(s){return [s,0,0,0,0,s,0,0,0,0,s,0,0,0,0,1];},
-  xf(m,p){const x=p[0],y=p[1],z=p[2];return [m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13],m[2]*x+m[6]*y+m[10]*z+m[14],m[3]*x+m[7]*y+m[11]*z+m[15]];}
-};
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t, ease=t=>t*t*(3-2*t);
-const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
+/* ---------- layout ---------- */
+let vw=innerWidth, vh=innerHeight, dpr=1, narrow=false, storyTop=0, centres=[];
+function measure(){
+  dpr=Math.min(2,window.devicePixelRatio||1); vw=innerWidth; vh=innerHeight; narrow=vw<=720;
+  cv.width=Math.round(vw*dpr); cv.height=Math.round(vh*dpr); cv.style.width=vw+'px'; cv.style.height=vh+'px';
+  if(!curFam) return; const st=stories[curFam]; storyTop=st.offsetTop;
+  centres=famScenes(curFam).map(el=>storyTop+el.offsetTop+el.offsetHeight/2);
+}
+addEventListener('resize',measure);
+function storyProgress(y){ const mid=y+vh/2; if(!centres.length) return 0; if(mid<=centres[0]) return (mid-centres[0])/vh;
+  for(let i=0;i<centres.length-1;i++) if(mid<centres[i+1]) return i+(mid-centres[i])/(centres[i+1]-centres[i]);
+  return centres.length-1+(mid-centres[centres.length-1])/vh; }
+function stageRect(sf){            /* where the story frame is drawn (3:4 frames) */
+  const ar=3/4;
+  if(!narrow){ const h=vh*1.08, w=h*ar; const cx=vw*(sf>=0?0.64:0.5); return {x:cx-w/2,y:(vh-h)/2,w,h}; }
+  const sc=famScenes(curFam); const i=clamp(Math.round(sf),0,sc.length-1); const cp=sc[i].firstElementChild.getBoundingClientRect();
+  const top=$('top').getBoundingClientRect().bottom, bot=Math.max(top+200,cp.top-8);
+  const h=Math.min((bot-top)*1.12, vw/ar*1.05), w=h*ar; return {x:(vw-w)/2,y:(top+bot)/2-h/2,w,h};
+}
+const stageRectZ=(sf)=>zoomR(stageRect(sf),FAM[MODELS[sel].fam].zoom);
 
-/* ---------- WebGL ---------- */
-const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,premultipliedAlpha:true});
-if(!gl){ $('loading').textContent='ВАШ БРАУЗЕР НЕ ПОКАЗЫВАЕТ 3D'; setUI(); return; }
-const VS=`#version 300 es
-in vec3 aPos; in vec4 aNor; in vec2 aUv; in vec4 aExp;
-uniform mat4 uP,uV,uM; uniform vec3 uCenter; uniform float uHalf,uExpScale,uExplode; uniform vec2 uUvMap; uniform int uHasAO;
-out vec3 vW; out vec3 vN; out vec3 vMP; out vec3 vMN; out vec3 vT; out vec2 vUv; out float vAO;
-void main(){ vec3 p=aPos*uHalf+uCenter; vMP=p; vMN=aNor.xyz; p+=aExp.xyz*uExpScale*uExplode;
-  vUv=uUvMap.x+aUv*uUvMap.y; vAO=uHasAO==1?clamp(aNor.w*1.0039,0.,1.):1.; vAO=mix(vAO,1.,uExplode*.6);
-  vec4 w=uM*vec4(p,1.); vW=w.xyz; vN=mat3(uM)*aNor.xyz;
-  vec2 r=length(vMP.xy)>1e-5?normalize(vMP.xy):vec2(1.,0.); vT=mat3(uM)*vec3(r,0.); gl_Position=uP*uV*w; }`;
-const FS=`#version 300 es
-precision highp float;
-in vec3 vW; in vec3 vN; in vec3 vMP; in vec3 vMN; in vec3 vT; in vec2 vUv; in float vAO; out vec4 o;
-uniform vec4 uBase; uniform float uMetal,uRough,uOpen; uniform int uRole;
-uniform sampler2D uTex,uMR,uEng; uniform int uTextured,uRecolor,uDesat; uniform vec3 uDialBg,uDialInk,uDialMR;
-uniform vec3 uCam,uTint;
-const vec2 DIAL_C=vec2(.7287,.4603); const float DIAL_R=.0835; const float PI=3.14159265;
-float box(vec3 d,vec3 c,vec2 size,float soft){ vec3 z=normalize(c); vec3 x=normalize(cross(vec3(0,1,0),z)); vec3 y=cross(z,x);
-  float k=dot(d,z); if(k<=0.) return 0.; vec2 p=vec2(dot(d,x),dot(d,y))/k; vec2 q=abs(p)-size; return 1.-smoothstep(-soft,soft,max(q.x,q.y)); }
-vec3 env(vec3 d){
-  float y=d.y;
-  vec3 c=mix(vec3(.05,.053,.06),vec3(.28,.29,.32),smoothstep(-.2,.9,y));
-  c+=vec3(.34)*smoothstep(-.05,-.6,y)*(1.-smoothstep(-.6,-1.,y)*.5);
-  c+=vec3(9.)*box(d,vec3(.9,.25,.35),vec2(.32,.9),.12);
-  c+=vec3(5.5)*box(d,vec3(-.95,.35,.2),vec2(.22,1.1),.16);
-  c+=vec3(1.9)*box(d,vec3(.1,1.,.15),vec2(.55,.55),.25);
-  c+=vec3(2.5)*box(d,vec3(-.2,.15,-1.),vec2(.9,.25),.2);
-  c+=vec3(1.4)*box(d,vec3(0.,.05,1.),vec2(1.4,.06),.05);
-  return c*mix(vec3(1.),uTint,uOpen*.3);
+/* ---------- drawing ---------- */
+const off=document.createElement('canvas'), octx=off.getContext('2d');
+function drawFeathered(im,r,alpha){
+  if(!im||alpha<=0.003) return;
+  const W=Math.max(2,Math.round(r.w*dpr)), H=Math.max(2,Math.round(r.h*dpr));
+  if(off.width!==W||off.height!==H){ off.width=W; off.height=H; }
+  octx.globalCompositeOperation='source-over'; octx.clearRect(0,0,W,H); octx.drawImage(im,0,0,W,H);
+  octx.globalCompositeOperation='destination-in';
+  octx.save(); octx.translate(W/2,H/2); octx.scale(1,H/W);
+  const g=octx.createRadialGradient(0,0,W*0.36,0,0,W*0.5); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  octx.fillStyle=g; octx.fillRect(-W,-W,2*W,2*W); octx.restore();
+  ctx.globalAlpha=alpha; ctx.drawImage(off,r.x*dpr,r.y*dpr); ctx.globalAlpha=1;
 }
-vec3 envBlur(vec3 R,vec3 N,float rough){
-  float a=rough*rough; if(a<.02) return env(R);
-  vec3 up=abs(R.y)<.95?vec3(0,1,0):vec3(1,0,0); vec3 t=normalize(cross(up,R)); vec3 b=cross(R,t);
-  vec3 acc=vec3(0.); float w=0.; float spread=clamp(a*1.6,0.,1.2);
-  for(int i=0;i<12;i++){ float fi=float(i); float ang=fi*2.39996; float r=sqrt((fi+.5)/12.)*spread;
-    vec3 d=normalize(R+(t*cos(ang)+b*sin(ang))*r); float ww=max(dot(d,N),0.)+.05; acc+=env(d)*ww; w+=ww; }
-  return acc/w;
-}
-vec2 envBRDF(float ndv,float rough){ vec4 c0=vec4(-1.,-.0275,-.572,.022), c1=vec4(1.,.0425,1.04,-.04); vec4 r=rough*c0+c1;
-  float a004=min(r.x*r.x,exp2(-9.28*ndv))*r.x+r.y; return vec2(-1.04,1.04)*a004+r.zw; }
-float D_GGX(float nh,float a){ float a2=a*a; float d=nh*nh*(a2-1.)+1.; return a2/(PI*d*d); }
-void main(){
-  vec3 N=normalize(vN); if(!gl_FrontFacing) N=-N;
-  vec3 V=normalize(uCam-vW);
-  vec3 base=uBase.rgb; float metal=uMetal, rough=uRough; int role=uRole; float ao=vAO; float dialSpec=1.;
-  if(uTextured==1){
-    vec3 t=texture(uTex,vUv).rgb; vec3 mr=texture(uMR,vUv).rgb;
-    metal=mr.b; rough=clamp(mr.g*1.2+.06,.08,1.);
-    if(distance(vUv,DIAL_C)<DIAL_R){
-      if(uRecolor==1){
-        float l=dot(t,vec3(.333));
-        float ink=(1.-smoothstep(.42,.66,l))*smoothstep(.06,.16,l);
-        float hole=1.-smoothstep(.04,.12,l);
-        vec3 bg=uDialBg*(.95+(l-.8)*.9);
-        t=mix(mix(bg,uDialInk,ink),vec3(.02),hole);
-        metal=mix(uDialMR.x,.1,ink); rough=mix(uDialMR.y,.4,ink); dialSpec=mix(uDialMR.z,1.,ink);
-      } else { metal=.15; rough=.32; }
-      role=1;
-    } else if(uDesat==1){
-      float o2=smoothstep(.1,.22,t.r-t.b); t=mix(t,vec3(dot(t,vec3(.3,.59,.11))*1.15),o2);
-    }
-    base=pow(t,vec3(2.2));
-    if(metal>.5&&role!=1) base=mix(vec3(.64,.655,.68),base*1.9,.45);
-    /* clasp cover engraving: TISSOT / 1853, read from the back of the bracelet */
-    if(vMP.z<-.0433&&vMN.z<-.6&&abs(vMP.x)<.0075&&abs(vMP.y)<.0075){
-      float m=texture(uEng,vec2(.5-vMP.x/.015,.5-vMP.y/.015)).r;
-      base*=1.-.5*m; rough=mix(rough,.6,m); ao*=1.-.25*m; }
+function drawPlain(im,r,alpha){ if(!im||alpha<=0.003) return; ctx.globalAlpha=alpha; ctx.drawImage(im,r.x*dpr,r.y*dpr,r.w*dpr,r.h*dpr); ctx.globalAlpha=1; }
+function shelfLayout(t){
+  const items=[]; const n=MODELS.length;
+  for(let i=0;i<n;i++){
+    let d=i-sel; if(d>n/2) d-=n; if(d<-n/2) d+=n;
+    const ad=Math.abs(d), sway=reduce?0:Math.sin(t*0.0007+i*1.3)*2.2;
+    let h,cx,cy,yaw,alpha=1;
+    if(narrow){ const top=$('top').getBoundingClientRect().bottom, bot=$('shelf-ui').getBoundingClientRect().top-6;
+      h=Math.min(bot-top,vw*1.3)*(d===0?1.08:0.78); cx=vw/2+d*vw*0.66; cy=(top+bot)/2+(d===0?0:10); alpha=ad>1?0:1; }
+    else { h=vh*(d===0?0.86:0.6); cx=vw/2+d*Math.min(vw*0.25,420); cy=vh*(d===0?0.44:0.47); alpha=ad>2?0:1; }
+    yaw=SHELF_MID+(d===0?sway:-Math.sign(d)*5+sway*0.5);
+    const zf=FAM[MODELS[i].fam].zoom; h*=zf; cy+=narrow?0:(zf-1)*h*0.04;
+    items.push({i,d,ad,h,w:h*0.75,cx,cy,yaw,alpha});
   }
-  float ndv=max(dot(N,V),1e-4);
-  vec3 R=reflect(-V,N);
-  vec3 F0=mix(vec3(.04),base,metal);
-  vec2 ab=envBRDF(ndv,rough);
-  vec3 spec=envBlur(R,N,rough)*(F0*ab.x+ab.y);
-  vec3 diff=base*(1.-metal)*envBlur(N,N,1.)*.9;
-  vec3 L=normalize(vec3(.9,.25,.35)); vec3 H=normalize(L+V); float nl=max(dot(N,L),0.);
-  float a=max(rough*rough,.02); vec3 Fk=F0+(1.-F0)*pow(1.-max(dot(H,V),0.),5.);
-  vec3 key=D_GGX(max(dot(N,H),0.),a)*Fk*nl*.25/max(4.*ndv*nl,.05)*1.2;
-  float so=clamp(pow(ndv+ao,exp2(-16.*rough-1.))-1.+ao,0.,1.);
-  vec3 col=diff*ao+spec*so*dialSpec+key*ao;
-  if(role==1){ vec3 T=normalize(vT); float an=1.-abs(dot(T,H));
-    col+=(base*pow(an,12.)*1.6*smoothstep(.002,.006,length(vMP.xy))+F0*pow(an,30.)*1.2)*uDialMR.z; }
-  float alpha=uBase.a;
-  if(uRole==2){ vec3 F=vec3(.06)+(vec3(1.)-vec3(.06))*pow(1.-ndv,5.);
-    vec3 g=env(R)*F; alpha=clamp(dot(F,vec3(.333))*.6+dot(g,vec3(.1)),0.,.8); col=g/max(alpha,.03); }
-  col*=1.05;
-  col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
-  col=pow(clamp(col,0.,1.),vec3(1./2.2));
-  o=vec4(col*alpha,alpha);
-}`;
-function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(x));return x;}
-const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog);
-if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
-gl.useProgram(prog);
-const U={}; ['uP','uV','uM','uBase','uMetal','uRough','uOpen','uRole','uCam','uTint','uCenter','uHalf','uUvMap','uHasAO','uExpScale','uExplode','uDialMR','uTex','uMR','uTextured','uRecolor','uDesat','uDialBg','uDialInk','uEng'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
-/* engraving mask for the clasp: 512px = 15 mm, groove at the middle */
-const ENG=(()=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
-  x.fillStyle='#000'; x.fillRect(0,0,512,512); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle';
-  x.font='700 92px Georgia,"Times New Roman",serif'; x.fillText('TISSOT',256,256-3.1*34.1,400);
-  /* year: every digit scaled to the same height on one baseline, so old-style figures of any font stand level */
-  x.font='700 80px "Times New Roman",Times,Georgia,serif'; x.textBaseline='alphabetic'; x.textAlign='left';
-  { const H=46, base=256+3*34.1+H/2, gap=10, ds=[...'1853'].map(ch=>{ const m=x.measureText(ch); const a=m.actualBoundingBoxAscent, d=m.actualBoundingBoxDescent;
-      const k=H/Math.max(1,a+d); return {ch,a,d,k,w:(m.actualBoundingBoxLeft+m.actualBoundingBoxRight)*Math.min(k,1.15),l:m.actualBoundingBoxLeft}; });
-    let cx=256-(ds.reduce((t,o)=>t+o.w,0)+gap*(ds.length-1))/2;
-    ds.forEach(o=>{ const kx=Math.min(o.k,1.15); x.save(); x.translate(cx+o.l*kx,base); x.scale(kx,o.k); x.fillText(o.ch,0,-o.d); x.strokeStyle='#fff'; x.lineWidth=2.4; x.strokeText(o.ch,0,-o.d); x.restore(); cx+=o.w+gap; }); }
-  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,512,512,0,gl.RED,gl.UNSIGNED_BYTE,
-    (()=>{ const d=x.getImageData(0,0,512,512).data, o=new Uint8Array(512*512); for(let i=0;i<o.length;i++) o[i]=d[i*4]; return o; })());
-  gl.pixelStorei(gl.UNPACK_ALIGNMENT,4); gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; })();
-const A={pos:gl.getAttribLocation(prog,'aPos'),nor:gl.getAttribLocation(prog,'aNor'),uv:gl.getAttribLocation(prog,'aUv'),exp:gl.getAttribLocation(prog,'aExp')};
-
-async function loadTex(url){
-  const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status);
-  const bmp=await createImageBitmap(await res.blob(),{imageOrientation:'none',premultiplyAlpha:'none',colorSpaceConversion:'none'});
-  const tx=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tx);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp); gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-  const ext=gl.getExtension('EXT_texture_filter_anisotropic'); if(ext) gl.texParameterf(gl.TEXTURE_2D,ext.TEXTURE_MAX_ANISOTROPY_EXT,8);
-  return tx;
+  return items;
 }
-let MESH=null, TEX=null;
-async function loadWPM(url){
-  const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status);
-  const bin=atob((await res.text()).trim()); const u8=new Uint8Array(bin.length);
-  for(let q=0;q<bin.length;q++) u8[q]=bin.charCodeAt(q);
-  const buf=u8.buffer, dv=new DataView(buf);
-  const hl=dv.getUint32(4,true); const H=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,8,hl))); const base=8+hl;
-  const draws=H.groups.map(g=>{
-    const vao=gl.createVertexArray(); gl.bindVertexArray(vao);
-    const put=(arr,loc,size,type,norm)=>{ const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW); if(loc>=0){gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,size,type,norm,0,0);} };
-    put(new Int16Array(buf,base+g.pos,g.count*3),A.pos,3,gl.SHORT,true);
-    put(new Int8Array(buf,base+g.nor,g.count*4),A.nor,4,gl.BYTE,true);
-    put(new Uint16Array(buf,base+g.uv,g.count*2),A.uv,2,gl.UNSIGNED_SHORT,true);
-    if(g.exp!=null) put(new Int8Array(buf,base+g.exp,g.count*4),A.exp,4,gl.BYTE,true);
-    const ib=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(buf,base+g.idx,g.icount),gl.STATIC_DRAW);
-    gl.bindVertexArray(null);
-    const glass=g.role==='glass';
-    return {vao,icount:g.icount,blend:glass,role:glass?2:0,textured:!glass,base:[1,1,1,1],metal:glass?0:1,rough:glass?.04:.3};
-  });
-  /* ~500 sample points of the body, used to measure where the watch is on screen */
-  const g0=H.groups[0], P16=new Int16Array(buf,base+g0.pos,g0.count*3), pts=[], stp=Math.max(1,Math.floor(g0.count/500));
-  for(let v=0;v<g0.count;v+=stp) pts.push([0,1,2].map(a=>P16[v*3+a]/32767*H.half+H.center[a]));
-  return {draws,pts,center:H.center,half:H.half,uvMap:[H.uvlo,H.uvhi-H.uvlo],expScale:H.expScale||0};
-}
-const DIAL={
-  green:{bg:[.03,.27,.155],ink:[.95,.96,.93],recolor:1,desat:1,mr:[.25,.3,.38]},
-  blue:{bg:[.02,.10,.34],ink:[.95,.96,.98],recolor:1,desat:1,mr:[.25,.3,.38]},
-  black:{bg:[.02,.021,.024],ink:[.94,.94,.94],recolor:1,desat:1,mr:[.04,.1,.3]},
-  silver:{bg:[.8,.8,.8],ink:[.2,.2,.2],recolor:0,desat:0,mr:[.15,.32,1]}
-};
-
-/* ---------- choreography ---------- */
-/* pose: x,y,z (m), ry,rx,rz (deg), s, e = explode 0..1. Narrow screens use n:{…} overrides. bg = [glow, deep] or 'w' for the selected watch. */
-/* phone layout: camera + where the watch sits (upper part of the screen, text below) */
-const MOB={fov:30,shelfY:.028,shelfZ:.035,peek:.063,big:1.28,side:1.08};
-const SCENES=[
-  {p:{x:.03,y:0,z:.04,ry:-22,rx:8,rz:-22,s:1.25,e:0},n:{x:0,y:0.026,z:.0,s:1.25},bg:'w',word:1},
-  {p:{x:.05,y:.002,z:.02,ry:84,rx:4,rz:0,s:1.15,e:0},n:{x:0,y:0.034,z:-.02,s:1.25},bg:['#3a3d45','#0c0d10']},
-  {p:{x:.012,y:.008,z:.035,ry:-48,rx:12,rz:-8,s:1.25,e:0},n:{x:0,y:0.032,z:-.01,s:1.312},bg:['#2a2d35','#0a0b0e'],labels:1},
-  {p:{x:.0,y:-.003,z:.205,ry:-6,rx:3,rz:-2,s:1.0,e:0},n:{x:0,y:.034,z:.095},bg:'w'},
-  {p:{x:.035,y:0,z:.04,ry:-32,rx:-22,rz:-30,s:1.25,e:0},n:{x:0,y:0.04,z:-.01,s:1.188},bg:['#1d4f9e','#05132a']},
-  {p:{x:.05,y:0,z:.0,ry:158,rx:6,rz:14,s:1.0,e:0},n:{x:0,y:0.034,z:-.03,s:1.125},bg:['#4a3b30','#120d0a']},
-  {p:{x:.035,y:0,z:.05,ry:-14,rx:5,rz:-12,s:1.3,e:0},n:{x:0,y:0.03,z:.0,s:1.25},bg:'w'},
-  {p:{x:0,y:.022,z:-.02,ry:0,rx:4,rz:0,s:1.0,e:0},n:{x:0,y:0.034,z:0,s:1.25},bg:'w',word:1}
-];
-const LABELS=[ /* anchors in model space (metres); side: label to the right or left of the anchor */
-  {a:[.004,.012,.0047],t:'Сапфировое стекло',s:'устойчиво к царапинам',side:'r'},
-  {a:[.0165,.007,.0042],t:'Безель',s:'полированная сталь',side:'r'},
-  {a:[.0215,0,-.0008],t:'Заводная головка',s:'сталь, с насечкой',side:'r'},
-  {a:[-.0195,-.006,-.0005],t:'Корпус',s:'сталь 316L, 40 × 10,4 мм',side:'l'},
-  {a:[-.008,-.006,.0023],t:'Циферблат',s:'«солнечные лучи»',side:'l'},
-  {a:[-.011,-.03,-.004],t:'Браслет',s:'интегрированный, застёжка-бабочка',side:'l'}
-];
-const co=$('callouts');
-const SVGNS='http://www.w3.org/2000/svg', svg=document.createElementNS(SVGNS,'svg'); co.appendChild(svg);
-LABELS.forEach(l=>{ const d=document.createElement('div'); d.className='co'+(l.side==='l'?' left':''); d.innerHTML='<b>'+l.t+'</b><span>'+l.s+'</span>'; co.appendChild(d); l.el=d;
-  l.line=document.createElementNS(SVGNS,'polyline'); l.dot=document.createElementNS(SVGNS,'circle'); l.dot.setAttribute('r','4'); svg.appendChild(l.line); svg.appendChild(l.dot); });
-
-const shelfItems=W.map((w,i)=>({w,i,cur:{x:0,y:-.3,z:-.2,ry:w.yaw,rx:0,rz:0,s:1,e:0},sx:0,sy:0}));
-function shelfPose(it,t,narrow){
-  let d=it.i-sel; if(d>N/2)d-=N; if(d<-N/2)d+=N; const ad=Math.abs(d);
-  const bob=reduce?0:Math.sin(t*.0011+it.i)*.0018, sway=reduce?0:Math.sin(t*.0006+it.i*1.7)*7;
-  if(narrow){
-    const F=SFIT||{x:0,y:MOB.shelfY,z:MOB.shelfZ,s:MOB.big};
-    if(d===0) return {x:F.x,y:F.y+bob,z:F.z,ry:sway*.5,rx:3,rz:-3,s:F.s,e:0};
-    const z=F.z-.03, wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-z)/canvas.clientHeight;   /* neighbours peek in from the screen edges */
-    return {x:Math.sign(d)*(innerWidth*.6+(ad-1)*innerWidth*.5)*wpp,y:F.y-.003+bob,z,ry:d*-34+sway,rx:5,rz:Math.sign(d)*-4,s:F.s*.86,e:0};
-  }
-  const gap=.072;
-  if(d===0) return {x:0,y:.012+bob,z:.02,ry:sway*.6,rx:3,rz:-4,s:1.0,e:0};
-  return {x:d*gap+Math.sign(d)*Math.max(0,ad-1)*.034,y:-ad*.006+bob,z:-ad*.045,ry:it.w.yaw+d*-16+sway,rx:5,rz:it.w.roll,s:.8,e:0};
-}
-function storyPose(sf,narrow,t){
-  const i=clamp(Math.floor(sf),0,SCENES.length-1), j=clamp(i+1,0,SCENES.length-1), f=ease(clamp(sf-i,0,1));
-  const P=(k)=>Object.assign({},SCENES[k].p,narrow?SCENES[k].n:{});
-  const a=P(i), b=P(j), o={};
-  for(const k in a) o[k]=lerp(a[k],b[k],f);
-  if(!reduce){ o.ry+=Math.sin(t*.0005)*3; o.y+=Math.sin(t*.0009)*.0012; }
-  if(sf>SCENES.length-1) o.y+=(sf-(SCENES.length-1))*.12;   /* lift away into the specs */
-  return o;
-}
-function sceneBg(k){ const b=SCENES[clamp(k,0,SCENES.length-1)].bg; return b==='w'?[W[sel].glow,W[sel].deep]:b; }
-
-let proj,view,cam=[0,0,.3];
-function resize(){
-  const dpr=Math.min(2,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
-  canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); gl.viewport(0,0,canvas.width,canvas.height);
-  const asp=w/h, fov=(asp<.8?MOB.fov:26)*toRad; proj=M4.persp(fov,asp,.01,5);
-  cam=[0,0,asp<.8?.36:.3]; view=M4.tr(0,0,-cam[2]);
-}
-window.addEventListener('resize',resize);
-function model(c){ let m=M4.tr(c.x,c.y,c.z); m=M4.mul(m,M4.rz(c.rz*toRad)); m=M4.mul(m,M4.ry(c.ry*toRad)); m=M4.mul(m,M4.rx(c.rx*toRad)); return M4.mul(m,M4.sc(c.s)); }
-function toScreen(m,p){ const pv=M4.mul(proj,view); const q=M4.xf(M4.mul(pv,m),p); return [(q[0]/q[3]*.5+.5)*canvas.clientWidth,(1-(q[1]/q[3]*.5+.5))*canvas.clientHeight]; }
-/* phone: put the watch exactly in the middle of the free space between the header and the text, and size it to fit */
-function screenBox(c){ const pvm=M4.mul(M4.mul(proj,view),model(c)); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; const W=canvas.clientWidth,Hh=canvas.clientHeight;
-  for(const p of MESH.pts){ const q=M4.xf(pvm,p); const sx=(q[0]/q[3]*.5+.5)*W, sy=(1-(q[1]/q[3]*.5+.5))*Hh; if(sx<x0)x0=sx; if(sx>x1)x1=sx; if(sy<y0)y0=sy; if(sy>y1)y1=sy; }
-  const o=M4.xf(pvm,[0,0,0]); return {x0,y0,x1,y1,ox:(o[0]/o[3]*.5+.5)*W,oy:(1-(o[1]/o[3]*.5+.5))*Hh}; }
-function fitPhone(tgt,sf,w){
-  if(!MESH||w<=0) return tgt;
-  const si=clamp(Math.round(sf),0,scenes.length-1), cp=scenes[si].firstElementChild.getBoundingClientRect();
-  const top=$('top').getBoundingClientRect().bottom+14, bot=Math.min(innerHeight-20,cp.top-22);
-  const close=clamp(1.4-Math.abs(sf-3)*1.8,0,1);           /* dial close-up: centre the dial, let the bracelet run off screen */
-  return fitRegion(tgt,top,bot,innerWidth-28,close,w);
-}
-function fitRegion(tgt,top,bot,rw,close,w){
-  const cx=innerWidth/2, cy=(top+bot)/2, rh=Math.max(120,bot-top);
-  const o=Object.assign({},tgt);
-  let b=screenBox(o); const f=clamp(Math.min(rh*.94/(b.y1-b.y0),rw/(b.x1-b.x0)),.6,1.6);
-  o.s*=lerp(1,lerp(f,1,close),w);
-  for(let it=0;it<2;it++){ b=screenBox(o);
-    const px=lerp((b.x0+b.x1)/2,b.ox,close), py=lerp((b.y0+b.y1)/2,b.oy,close);
-    const wpp=2*Math.tan(MOB.fov*toRad/2)*(cam[2]-o.z)/canvas.clientHeight;
-    o.x+=(cx-px)*wpp*w; o.y-=(cy-py)*wpp*w; }
-  return o;
-}
-function pick(e){
-  let best=null,bd=1e9; shelfItems.forEach(it=>{ const d=Math.hypot(it.sx-e.clientX,it.sy-e.clientY); if(d<bd){bd=d;best=it;} });
-  if(!best||bd>Math.min(160,innerWidth*.18)) return;
-  if(best.i===sel) $('open').click(); else { sel=best.i; setUI(); }
-}
-
-const gCur={g1:hex(W[0].glow),g2:hex(W[0].deep)}; let tintCur=[1,1,1], openCur=0, prevT=performance.now();
-const mix3=(a,b,t)=>a.map((v,i)=>lerp(v,b[i],t)), css=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
+const glowEl=$('bg-glow'), wordEl=$('word'), loadEl=$('loading'), shelfUI=$('shelf-ui');
+let cur=null, sfS=0, last=0, shelfRect=null;
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function frame(t){
-  const dt=Math.min(64,t-prevT); prevT=t; const k=1-Math.pow(.0018,dt/1000*1.6);
-  const vh=innerHeight, narrow=innerWidth<720;
-  const storyTop=storyEl.offsetTop, y=window.scrollY;
-  const enter=clamp((y-storyTop+vh*.85)/(vh*.85),0,1);                 /* 0 on the shelf, 1 inside the story */
-  /* scene float from real scene centres: 0 = first scene centred, 1 = second, … (robust to scenes taller than the screen) */
-  const mid=y+vh/2, cs=scenes.map(el=>storyTop+el.offsetTop+el.offsetHeight/2);
-  let sf;
-  if(mid<=cs[0]) sf=(mid-cs[0])/vh;
-  else if(mid>=cs[cs.length-1]) sf=cs.length-1+(mid-cs[cs.length-1])/vh;
-  else { let i=0; while(mid>cs[i+1]) i++; sf=i+(mid-cs[i])/(cs[i+1]-cs[i]); }
-  const inStory=enter>0.02;
-  /* backdrop */
-  $('bg-studio').style.opacity='0';   /* dark stage everywhere; the glow takes the dial colour */
-  const si=clamp(Math.round(sf),0,SCENES.length-1); const [g1,g2]=sceneBg(si);
-  gCur.g1=mix3(gCur.g1,hex(g1),k*.8); gCur.g2=mix3(gCur.g2,hex(g2),k*.8);
-  const bg=$('bg-glow'); bg.style.setProperty('--g1',css(gCur.g1)); bg.style.setProperty('--g2',css(gCur.g2)); bg.style.setProperty('--gx',narrow?'50%':(50+12*enter).toFixed(1)+'%');
-  $('top').classList.add('dark');
-  $('loading').style.color='#f3f4f6';
-  /* scene copy fades + counters */
-  { const su=$('shelf-ui'), op=clamp(1-enter*3,0,1); su.style.opacity=op.toFixed(3); su.style.visibility=op<.02?'hidden':'visible'; }
-  scenes.forEach((el,i)=>{ const d=Math.abs(sf-i); const op=enter*clamp(narrow?1.8-d*3.8:1.25-d*2.1,0,1); const c=el.firstElementChild; c.style.opacity=op.toFixed(3);
-    c.style.visibility=op<.01?'hidden':'visible'; c.style.transform=narrow?'translateY('+((sf-i)*-18).toFixed(1)+'px)':'translateY('+((sf-i)*-40).toFixed(1)+'px)'; });
-  counters.forEach(el=>{ const sc=+el.closest('.scene').dataset.scene; const p=clamp((sf-sc+.55)/.5,0,1); const v=+el.dataset.count*ease(p); el.textContent=(+el.dataset.dec?v.toFixed(1):Math.round(v).toString()).replace('.',','); });
-  const wordOp=enter*Math.max(...SCENES.map((s,i)=>s.word?clamp(1.2-Math.abs(sf-i)*2,0,1):0));
-  $('word').style.opacity=(wordOp).toFixed(3);
-  /* tint */
-  openCur+=(enter-openCur)*k; const tg=si===4?[.7,.82,1]:(si===5?[1,.9,.8]:W[sel].tint); tintCur=tintCur.map((v,i)=>v+(tg[i]-v)*k);
-
-  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST);
-  gl.uniformMatrix4fv(U.uP,false,proj); gl.uniformMatrix4fv(U.uV,false,view);
-  gl.uniform3fv(U.uCam,cam); gl.uniform3fv(U.uTint,tintCur); gl.uniform1f(U.uOpen,openCur);
-  if(MESH){ gl.uniform3fv(U.uCenter,MESH.center); gl.uniform1f(U.uHalf,MESH.half); gl.uniform2fv(U.uUvMap,MESH.uvMap); gl.uniform1i(U.uHasAO,1); gl.uniform1f(U.uExpScale,MESH.expScale); }
-  if(TEX){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,TEX.a); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,TEX.m); gl.uniform1i(U.uTex,0); gl.uniform1i(U.uMR,1); }
-  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,ENG); gl.uniform1i(U.uEng,2);
-
-  /* phone shelf: centre watch fitted between the header and the shelf buttons */
-  SFIT=null;
-  if(narrow&&MESH){ const top=$('top').getBoundingClientRect().bottom+8, bot=$('shelf-ui').getBoundingClientRect().top-14;
-    SFIT=fitRegion({x:0,y:0,z:MOB.shelfZ,ry:0,rx:3,rz:-3,s:MOB.big,e:0},top,bot,innerWidth*.6,0,1); }
-  const sp=storyPose(sf,narrow,t), mats=[];
-  shelfItems.forEach(it=>{
-    let tgt=shelfPose(it,t,narrow);
-    if(it.i===sel){ if(inStory){ const o={}; for(const kk in tgt) o[kk]=lerp(tgt[kk],sp[kk],enter); tgt=o; if(narrow) tgt=fitPhone(tgt,sf,ease(enter)*clamp((SCENES.length-.5-sf)*2,0,1)); } }
-    else if(enter>0){ tgt=narrow?Object.assign({},tgt,{x:tgt.x+Math.sign(tgt.x)*enter*.09,ry:tgt.ry+Math.sign(tgt.x)*enter*30})
-                                 :Object.assign({},tgt,{y:lerp(tgt.y,-.25,enter),z:tgt.z-enter*.1,rx:tgt.rx+enter*40}); }
-    const c=it.cur; for(const kk in tgt) c[kk]+=(tgt[kk]-c[kk])*k;
-    const m=model(c); const s=toScreen(m,[0,0,0]); it.sx=s[0]; it.sy=s[1]; mats.push(m);
-  });
-  /* callouts for the exploded view */
-  const cm=mats[sel];
-  const coOp=enter*clamp(1.25-Math.abs(sf-2)*2.6,0,1); co.style.opacity=coOp.toFixed(3);
-  if(coOp>0){ /* two label columns beside the watch, leader lines run to each part (Ultra-style) */
-    const colR=innerWidth*.79, colL=innerWidth*.35, gapY=50, topY=90, botY=innerHeight*.62;
-    const pts=LABELS.map(l=>({l,p:toScreen(cm,l.a)}));
-    ['r','l'].forEach(side=>{
-      const col=pts.filter(o=>o.l.side===side).sort((a,b)=>a.p[1]-b.p[1]); let lastY=-1e9;
-      col.forEach(o=>{ o.y=Math.max(clamp(o.p[1],topY,botY),lastY+gapY); lastY=o.y; });
-    });
-    pts.forEach(o=>{ const el=o.l.el, h=el.offsetHeight, w=el.offsetWidth, r=o.l.side==='r';
-      const cx=r?colR:colL, bend=r?cx-28:cx+28;
-      o.l.dot.setAttribute('cx',o.p[0].toFixed(1)); o.l.dot.setAttribute('cy',o.p[1].toFixed(1));
-      o.l.line.setAttribute('points',o.p[0].toFixed(1)+','+o.p[1].toFixed(1)+' '+bend.toFixed(1)+','+o.y.toFixed(1)+' '+cx.toFixed(1)+','+o.y.toFixed(1));
-      el.style.transform='translate('+(r?cx+8:cx-w-8).toFixed(1)+'px,'+(o.y-h/2).toFixed(1)+'px)';
-    });
-  }
-  if(MESH) for(const pass of [0,1]){
-    if(pass){ gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); } else { gl.disable(gl.BLEND); gl.depthMask(true); }
-    shelfItems.forEach((it,ii)=>{
-      if(it.cur.y<-.2||Math.abs(it.cur.x)>.2) return;
-      gl.uniformMatrix4fv(U.uM,false,mats[ii]); gl.uniform1f(U.uExplode,it.cur.e);
-      const dv=DIAL[it.w.key];
-      MESH.draws.forEach(d=>{
-        if(!!pass!==d.blend) return;
-        gl.uniform4fv(U.uBase,d.base); gl.uniform1f(U.uMetal,d.metal); gl.uniform1f(U.uRough,d.rough); gl.uniform1i(U.uRole,d.role);
-        gl.uniform1i(U.uTextured,d.textured?1:0); gl.uniform1i(U.uRecolor,dv.recolor); gl.uniform1i(U.uDesat,dv.desat);
-        gl.uniform3fv(U.uDialBg,dv.bg); gl.uniform3fv(U.uDialInk,dv.ink); gl.uniform3fv(U.uDialMR,dv.mr);
-        gl.bindVertexArray(d.vao); gl.drawElements(gl.TRIANGLES,d.icount,gl.UNSIGNED_INT,0);
-      });
-    });
-  }
-  gl.depthMask(true); gl.bindVertexArray(null);
   requestAnimationFrame(frame);
+  const y=window.scrollY;
+  const sfRaw=storyProgress(y); const enter=clamp((y-(storyTop-vh*0.85))/(vh*0.85),0,1);
+  sfS=Math.abs(sfRaw-sfS)>3?sfRaw:lerp(sfS,sfRaw,0.22);
+  const m=MODELS[sel], mt=META[m.key]||{}, st=mt.steps||14, nf=mt.frames||1;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  /* shelf */
+  const items=shelfLayout(t); shelfHits=[];
+  const e=ease(enter);
+  for(const it of items.sort((a,b)=>b.ad-a.ad)){
+    const mm=MODELS[it.i]; const im=shelfImg(mm,it.yaw);
+    let r={x:it.cx-it.w/2,y:it.cy-it.h/2,w:it.w,h:it.h}, a=it.alpha;
+    if(it.d!==0){ r.x+=Math.sign(it.d)*e*vw*0.5; a*=1-e; }
+    else { a*=1-sstep(0.28,0.58,enter); }
+    if(enter<0.02) shelfHits.push({i:it.i,cx:it.cx});
+    if(it.d===0){ shelfRect=r; if(enter>0){ const sr=stageRectZ(sfS); r={x:lerp(r.x,sr.x,e),y:lerp(r.y,sr.y,e),w:lerp(r.w,sr.w,e),h:lerp(r.h,sr.h,e)}; } }
+    drawPlain(im,r,a);
+  }
+  /* story frames (cross-fade between neighbours) */
+  if(enter>0&&nf>1){
+    const sc=clamp(sfS,0,(nf-1)/st), f=sc*st, f0=Math.floor(f), fr=f-f0;
+    const r1=stageRectZ(sfS), r0=shelfRect||r1; const r=enter<1?{x:lerp(r0.x,r1.x,e),y:lerp(r0.y,r1.y,e),w:lerp(r0.w,r1.w,e),h:lerp(r0.h,r1.h,e)}:r1;
+    const a=sstep(0.28,0.58,enter);
+    const A=nearestFrame(m,f0), B=nearestFrame(m,f0+1);
+    drawFeathered(A,r,a); if(B&&B!==A&&fr>0.02) drawFeathered(B,r,a*fr);
+    loadEl.hidden=!!A||enter<0.5;
+  } else loadEl.hidden=!!shelfImg(m,SHELF_MID);
+  /* page chrome */
+  shelfUI.style.opacity=clamp(1-enter*3,0,1).toFixed(3); shelfUI.style.visibility=enter>0.33?'hidden':'visible';
+  const g=m.glow, dp=m.deep; if(glowEl._g!==g){ glowEl._g=g; glowEl.style.setProperty('--g1',g); glowEl.style.setProperty('--g2',dp); }
+  glowEl.style.setProperty('--gx',narrow?'50%':(50+14*e).toFixed(1)+'%');
+  wordEl.style.opacity=(enter*clamp(1-Math.abs(sfS-0)*1.5,0,1)*0.9+enter*clamp(1-Math.abs(sfS-(famScenes(curFam).length-1))*1.5,0,1)*0.9).toFixed(3);
+  famScenes(curFam).forEach((el,i)=>{ const d=Math.abs(sfS-i); const op=enter*clamp(narrow?1.8-d*3.8:1.25-d*2.1,0,1); const c=el.firstElementChild;
+    c.style.opacity=op.toFixed(3); c.style.visibility=op<.01?'hidden':'visible'; c.style.transform='translateY('+((sfS-i)*(narrow?-18:-40)).toFixed(1)+'px)'; });
+  drawCallouts(m,enter,sfS);
 }
-resize(); setUI();
-Promise.all([loadWPM('models/prx-real-x.wpm.txt'),loadTex('models/prx-albedo.jpg'),loadTex('models/prx-mr.png')])
-  .then(([m,ta,tm])=>{ MESH=m; TEX={a:ta,m:tm}; $('loading').hidden=true; })
-  .catch(err=>{ $('loading').textContent='НЕ УДАЛОСЬ ЗАГРУЗИТЬ 3D'; console.error(err); });
-requestAnimationFrame(frame);
+/* anatomy callouts (PRX, desktop): points exported from Blender for the anatomy frame */
+const CO=[['glass','Сапфировое стекло','устойчиво к царапинам','r'],['bezel','Безель','полированная сталь','l'],['crown','Заводная головка','с гравировкой T','r'],
+          ['case','Корпус','сталь 316L','r'],['dial','Циферблат','«солнечные лучи»','l'],['bracelet','Браслет','интегрированный','l']];
+const coEl=$('callouts'); coEl.innerHTML='<svg></svg>'+CO.map(c=>'<div class="co '+(c[3]==='l'?'left':'')+'" data-k="'+c[0]+'"><b>'+c[1]+'</b><span>'+c[2]+'</span></div>').join('');
+const coSvg=coEl.querySelector('svg'), coDivs=[...coEl.querySelectorAll('.co')];
+function drawCallouts(m,enter,sf){
+  const mt=META[m.key]; const op=(m.fam==='prx'&&!narrow&&mt&&mt.anat)?enter*clamp(1.25-Math.abs(sf-2)*2.6,0,1):0;
+  coEl.style.opacity=op.toFixed(3); if(op<=0.01) return;
+  const r=stageRect(sf); let svg=''; const colX={l:vw*0.36,r:Math.min(vw-200,r.x+r.w*0.98)}; const used={l:[],r:[]};
+  coDivs.forEach((dv,k)=>{ const c=CO[k], p=mt.anat[c[0]]; if(!p) return; const px=r.x+p[0]*r.w, py=r.y+(1-p[1])*r.h;
+    const side=c[3]; let ly=py; for(const u of used[side]) if(Math.abs(u-ly)<54) ly=u+54; used[side].push(ly);
+    const lx=side==='l'?colX.l:colX.r; dv.style.transform='translate('+(side==='l'?lx-dv.offsetWidth-10:lx+10)+'px,'+(ly-20)+'px)';
+    svg+='<polyline points="'+px+','+py+' '+(lx+(side==='l'?20:-20))+','+ly+' '+lx+','+ly+'"/><circle cx="'+px+'" cy="'+py+'" r="3.5"/>'; });
+  coSvg.innerHTML=svg;
+}
+setUI(); measure(); requestAnimationFrame(frame);
 })();
 </script>
 </body></html>
