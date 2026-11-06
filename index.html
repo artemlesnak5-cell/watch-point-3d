@@ -246,6 +246,13 @@ footer p{margin:0 auto;max-width:720px;font-size:11px;color:#8d9097}
         <p>Сапфировое стекло с антибликовым покрытием и водозащита до 5 бар для каждого дня.</p>
       </div>
     </section>
+    <section class="scene">
+      <div class="copy">
+        <span class="eyebrow">Застёжка</span>
+        <h2>Бабочка.</h2>
+        <p>Две плоские стальные пластины с гравировкой TISSOT и 1853. По бокам на стыке чуть выступают кнопки механизма: нажми их с двух сторон — и застёжка раскроется.</p>
+      </div>
+    </section>
     <section class="scene center low">
       <div class="copy">
         <span class="eyebrow">Tissot Bellissima 26 мм</span>
@@ -317,7 +324,7 @@ const MODELS=[
    dialT:'Голубой перламутр.', dial:'Перламутр переливается при каждом повороте, накладные римские цифры ловят свет.',
    braT:'Пять рядов стали.', bra:'Полированные звенья в пять рядов, смещённые как кирпичная кладка. Браслет закрывается застёжкой-бабочкой.'}
 ];
-const FAM={prx:{story:'story-prx',word:'PRX',steps:14,zoom:1},bell:{story:'story-bell',word:'BELLISSIMA',steps:14,zoom:1.32}};
+const FAM={prx:{story:'story-prx',word:'PRX',steps:14,zoom:1,sz:1},bell:{story:'story-bell',word:'BELLISSIMA',steps:14,zoom:1.32,sz:0.72}};
 const zoomR=(r,z)=>z===1?r:{x:r.x+r.w*(1-z)/2,y:r.y+r.h*(1-z)/2,w:r.w*z,h:r.h*z};
 const SHELF_N=19, SHELF_MID=9;
 const $=(id)=>document.getElementById(id);
@@ -336,16 +343,48 @@ const pad=(n,k)=>String(n).padStart(k,'0');
 const shelfURL=(m,j)=>'frames/shelf/'+m.key+'-'+pad(j,2)+'.webp';
 const frameURL=(m,i)=>'frames/'+m.key+'/'+pad(i,3)+'.webp';
 const META={};
-function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; if(MODELS[sel]===m) queueStory(m);}).catch(()=>{}); } return META[m.key]; }
-let storyQueue=[];
-function queueStory(m){ const mt=META[m.key]; if(!mt||!mt.frames) return; const st=mt.steps||14, n=mt.frames, order=[];
-  for(let i=0;i<n;i+=st) order.push(i); for(let s=Math.floor(st/2);s>=1;s=Math.floor(s/2)) for(let i=0;i<n;i+=s) if(!order.includes(i)) order.push(i); for(let i=0;i<n;i++) if(!order.includes(i)) order.push(i);
-  storyQueue=order.map(i=>frameURL(m,i)); pump(); }
+function meta(m){ if(!META[m.key]){ META[m.key]={frames:0}; fetch('frames/'+m.key+'/meta.json').then(r=>r.json()).then(j=>{META[m.key]=j; if(MODELS[sel]===m) setUI();}).catch(()=>{}); } return META[m.key]; }
+const segStarts=mt=>{ if(mt.starts) return mt.starts; const st=mt.steps||14, k=Math.ceil((mt.frames-1)/st), a=[]; for(let i=0;i<=k;i++) a.push(Math.min(i*st,mt.frames-1)); return a; };
+const sceneToFrame=(mt,sc)=>{ const S=segStarts(mt); if(sc<=0) return 0; if(sc>=S.length-1) return mt.frames-1; const i=Math.floor(sc); return lerp(S[i],S[i+1],sc-i); };
+/* compressed frames are kept as blobs (small); only a window of frames around the scroll position is decoded to bitmaps */
+const STORE={}, WIN=6;
+const store=m=>STORE[m.key]||(STORE[m.key]={blobs:new Map(),bmps:new Map(),pend:new Set(),busy:new Set(),dec:0,fc:0});
 let inflight=0;
-function pump(){ while(inflight<6&&storyQueue.length){ const u=storyQueue.shift(); if(cache.has(u)) continue; inflight++; const im=img(u); im.addEventListener('load',()=>{inflight--;pump();},{once:true}); im.addEventListener('error',()=>{inflight--;pump();},{once:true}); } }
-MODELS.forEach(m=>{ for(let j=0;j<SHELF_N;j+=2) img(shelfURL(m,j)); img(shelfURL(m,SHELF_MID),true); meta(m); });
-function nearestFrame(m,f){ const mt=META[m.key]; const n=mt.frames||1; const i0=clamp(Math.round(f),0,n-1);
-  for(let d=0;d<n;d++){ for(const i of [i0-d,i0+d]){ if(i<0||i>=n) continue; const im=cache.get(frameURL(m,i)); if(ok(im)) return im; } } return null; }
+const BFM={};                       /* optional overlay sequences per model (unused now: the butterfly clasp is part of the main sequence) */
+function nextPick(m){
+  const mt=META[m.key]; if(!mt||!mt.frames) return -1; const S=store(m), n=mt.frames;
+  if(!S.backbone){ const k=new Set(segStarts(mt)); for(let i=0;i<n;i+=8) k.add(i); k.add(n-1); S.backbone=[...k].sort((a,b)=>a-b); }
+  for(const i of S.backbone) if(!S.blobs.has(i)&&!S.busy.has(i)) return i;
+  let pick=-1, bd=1e9; for(let i=0;i<n;i++) if(!S.blobs.has(i)&&!S.busy.has(i)){ const d=Math.abs(i-S.fc); if(d<bd){bd=d;pick=i;} }
+  return pick;
+}
+function pump(){
+  const m=MODELS[sel], list=[m]; if(BFM[m.key]) list.push(BFM[m.key]);
+  while(inflight<6){
+    let t=null, pick=-1; for(const mm of list){ pick=nextPick(mm); if(pick>=0){ t=mm; break; } }
+    if(!t) return; const S=store(t); S.busy.add(pick); inflight++;
+    fetch('frames/'+t.key+'/'+pad(pick,3)+'.webp').then(r=>r.ok?r.blob():Promise.reject()).then(b=>{S.blobs.set(pick,b);}).catch(()=>{}).finally(()=>{S.busy.delete(pick); inflight--; pump();});
+  }
+}
+function wantBitmaps(m,f){
+  const S=store(m), mt=META[m.key]; if(!mt||!mt.frames) return; const n=mt.frames, c=Math.round(f); S.fc=f;
+  for(let d=0; d<=WIN+1 && S.dec<3; d++) for(const i of (d? [c-d,c+d] : [c])){
+    if(i<0||i>=n||S.bmps.has(i)||S.pend.has(i)||!S.blobs.has(i)) continue;
+    S.pend.add(i); S.dec++;
+    createImageBitmap(S.blobs.get(i)).then(bm=>{ if(Math.abs(i-S.fc)>WIN*2+2){ bm.close(); } else S.bmps.set(i,bm); }).catch(()=>{}).finally(()=>{S.pend.delete(i); S.dec--;});
+  }
+  for(const [i,bm] of S.bmps) if(Math.abs(i-c)>WIN+4){ bm.close(); S.bmps.delete(i); }
+  if(m.fam==='bfly') return;
+  /* keep the segment starts decoded as a safety net when scrolling fast */
+  for(const i of segStarts(mt)){ if(!S.bmps.has(i)&&!S.pend.has(i)&&S.blobs.has(i)&&S.dec<3){ S.pend.add(i); S.dec++; createImageBitmap(S.blobs.get(i)).then(bm=>{S.keep=S.keep||new Map(); S.keep.set(i,bm);}).catch(()=>{}).finally(()=>{S.pend.delete(i); S.dec--;}); } }
+}
+function releaseOthers(m){
+  for(const k in STORE) if(k!==m.key&&!(BFM[m.key]&&k===BFM[m.key].key)){ const o=STORE[k]; for(const bm of o.bmps.values()) bm.close(); o.bmps.clear(); if(o.keep){ for(const bm of o.keep.values()) bm.close(); o.keep=null; } }
+}
+function queueStory(m){ pump(); }
+MODELS.forEach(m=>{ for(let j=0;j<SHELF_N;j+=2) img(shelfURL(m,j)); img(shelfURL(m,SHELF_MID),true); meta(m); if(BFM[m.key]) meta(BFM[m.key]); });
+function nearestFrame(m,f){ const S=store(m), n=(META[m.key]||{}).frames||1; const i0=clamp(Math.round(f),0,n-1);
+  for(let d=0;d<n;d++){ for(const i of [i0-d,i0+d]){ if(i<0||i>=n) continue; const bm=S.bmps.get(i)||(S.keep&&S.keep.get(i)); if(bm) return bm; } } return null; }
 function shelfImg(m,j){ j=clamp(Math.round(j),0,SHELF_N-1); for(let d=0;d<SHELF_N;d++){ for(const k of [j-d,j+d]){ if(k<0||k>=SHELF_N) continue; const im=cache.get(shelfURL(m,k))||img(shelfURL(m,k)); if(ok(im)) return im; } } return null; }
 
 /* ---------- UI ---------- */
@@ -407,15 +446,20 @@ const stageRectZ=(sf)=>zoomR(stageRect(sf),FAM[MODELS[sel].fam].zoom);
 
 /* ---------- drawing ---------- */
 const off=document.createElement('canvas'), octx=off.getContext('2d');
-function drawFeathered(im,r,alpha){
-  if(!im||alpha<=0.003) return;
+let maskCv=null;
+function featherMask(W,H){
+  if(maskCv&&maskCv.width===W&&maskCv.height===H) return maskCv;
+  maskCv=document.createElement('canvas'); maskCv.width=W; maskCv.height=H; const c=maskCv.getContext('2d');
+  c.translate(W/2,H/2); c.scale(1,H/W); const g=c.createRadialGradient(0,0,W*0.36,0,0,W*0.5); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g; c.fillRect(-W,-W,2*W,2*W); return maskCv;
+}
+function drawFeathered(A,B,fr,r,alpha){
+  if(!A||alpha<=0.003) return;
   const W=Math.max(2,Math.round(r.w*dpr)), H=Math.max(2,Math.round(r.h*dpr));
   if(off.width!==W||off.height!==H){ off.width=W; off.height=H; }
-  octx.globalCompositeOperation='source-over'; octx.clearRect(0,0,W,H); octx.drawImage(im,0,0,W,H);
-  octx.globalCompositeOperation='destination-in';
-  octx.save(); octx.translate(W/2,H/2); octx.scale(1,H/W);
-  const g=octx.createRadialGradient(0,0,W*0.36,0,0,W*0.5); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
-  octx.fillStyle=g; octx.fillRect(-W,-W,2*W,2*W); octx.restore();
+  octx.globalCompositeOperation='source-over'; octx.globalAlpha=1; octx.clearRect(0,0,W,H); octx.drawImage(A,0,0,W,H);
+  if(B&&B!==A&&fr>0.02){ octx.globalAlpha=fr; octx.drawImage(B,0,0,W,H); octx.globalAlpha=1; }
+  octx.globalCompositeOperation='destination-in'; octx.drawImage(featherMask(W,H),0,0);
   ctx.globalAlpha=alpha; ctx.drawImage(off,r.x*dpr,r.y*dpr); ctx.globalAlpha=1;
 }
 function drawPlain(im,r,alpha){ if(!im||alpha<=0.003) return; ctx.globalAlpha=alpha; ctx.drawImage(im,r.x*dpr,r.y*dpr,r.w*dpr,r.h*dpr); ctx.globalAlpha=1; }
@@ -429,13 +473,13 @@ function shelfLayout(t){
       h=Math.min(bot-top,vw*1.3)*(d===0?1.08:0.78); cx=vw/2+d*vw*0.66; cy=(top+bot)/2+(d===0?0:10); alpha=ad>1?0:1; }
     else { h=vh*(d===0?0.86:0.6); cx=vw/2+d*Math.min(vw*0.25,420); cy=vh*(d===0?0.44:0.47); alpha=ad>2?0:1; }
     yaw=SHELF_MID+(d===0?sway:-Math.sign(d)*5+sway*0.5);
-    const zf=FAM[MODELS[i].fam].zoom; h*=zf; cy+=narrow?0:(zf-1)*h*0.04;
+    const zf=FAM[MODELS[i].fam].sz; h*=zf; cy+=narrow?0:(zf-1)*h*0.04;  /* true scale: Bellissima 26 mm vs PRX 40 mm (frames are framed per model) */
     items.push({i,d,ad,h,w:h*0.75,cx,cy,yaw,alpha});
   }
   return items;
 }
 const glowEl=$('bg-glow'), wordEl=$('word'), loadEl=$('loading'), shelfUI=$('shelf-ui');
-let cur=null, sfS=0, last=0, shelfRect=null;
+let cur=null, sfS=0, last=0, shelfRect=null, frameN=0, fPrev=0, fW=0, releaseM=null;
 const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function frame(t){
   requestAnimationFrame(frame);
@@ -458,11 +502,18 @@ function frame(t){
   }
   /* story frames (cross-fade between neighbours) */
   if(enter>0&&nf>1){
-    const sc=clamp(sfS,0,(nf-1)/st), f=sc*st, f0=Math.floor(f), fr=f-f0;
+    const fT=sceneToFrame(mt,sfS), vel=Math.abs(fT-fPrev); fPrev=fT; fW=lerp(fW,clamp(vel/0.15,0,1),0.25);
+    const f=lerp(Math.round(fT),fT,fW), f0=Math.floor(f), fr=f-f0;   /* blend neighbours only while moving; at rest show one crisp frame */
+    if(frameN===0||releaseM!==m){ releaseM=m; releaseOthers(m); }
+    wantBitmaps(m,f); if((frameN++&15)===0) pump();
     const r1=stageRectZ(sfS), r0=shelfRect||r1; const r=enter<1?{x:lerp(r0.x,r1.x,e),y:lerp(r0.y,r1.y,e),w:lerp(r0.w,r1.w,e),h:lerp(r0.h,r1.h,e)}:r1;
     const a=sstep(0.28,0.58,enter);
-    const A=nearestFrame(m,f0), B=nearestFrame(m,f0+1);
-    drawFeathered(A,r,a); if(B&&B!==A&&fr>0.02) drawFeathered(B,r,a*fr);
+    /* open-clasp overlay (Bellissima, scene 5): the clasp sequence dissolves in over the back view */
+    const bm_=BFM[m.key], bmt=bm_&&META[bm_.key], wB=bm_&&bmt&&bmt.frames>1?sstep(4.45,4.85,sfS)*(1-sstep(5.15,5.55,sfS)):0;
+    const A=nearestFrame(m,f0), B=nearestFrame(m,Math.min(f0+1,nf-1));
+    drawFeathered(A,B,fr,r,a*(1-wB));
+    if(wB>0.003){ const fb=clamp((sfS-4.5)/1.0,0,1)*(bmt.frames-1), g0=Math.floor(fb); wantBitmaps(bm_,fb);
+      drawFeathered(nearestFrame(bm_,g0),nearestFrame(bm_,Math.min(g0+1,bmt.frames-1)),fb-g0,r,a*wB); }
     loadEl.hidden=!!A||enter<0.5;
   } else loadEl.hidden=!!shelfImg(m,SHELF_MID);
   /* page chrome */
