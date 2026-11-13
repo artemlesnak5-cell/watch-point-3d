@@ -19,7 +19,7 @@
 <section class="page" id="page-purchase"><h2>Новое поступление</h2><p class="desc">Новая партия увеличит доступный склад.</p><div class="card"><div class="cols">
 <div class="field wide"><label>Дата поступления</label><input id="pd" type="date"></div><div class="field wide"><label>Модель часов</label><select id="ps"></select></div><div class="field"><label>Количество, шт.</label><input id="pq" type="number" min="1" max="100" step="1" value="1"></div><div class="field"><label>Полная закупка за 1 шт., ₽</label><input id="pc" type="number" min=".01" step=".01" placeholder="С доставкой"></div><div class="field wide"><label>Поставщик</label><input id="pv" maxlength="70" placeholder="Необязательно"></div><div class="field wide"><label>Примечание</label><textarea id="pn" maxlength="300"></textarea></div></div>
 <div class="total"><span class="muted">Стоимость партии</span><strong id="ptotal">—</strong></div><p class="message" id="perror"></p><button class="cta" id="psend">Проверить поступление</button><p class="muted">Не добавляй повторно первоначальные 19 часов.</p></div></section>
-<section class="page" id="page-stock"><h2>Склад</h2><p class="desc">Каталог Watch Point. Для актуальных остатков запроси ответ бота.</p><div class="notice">Сами количества не хранятся на сайте — бот прочитает их из Google Sheets после ближайшей проверки Telegram.</div><div id="catalog"></div><button class="cta secondary" id="stock">📦 Запросить остатки</button></section>
+<section class="page" id="page-stock"><h2>Склад</h2><p class="desc">Каталог Watch Point. Бот пришлёт актуальные остатки и общее количество часов.</p><div class="notice">Число часов рассчитывается по Google Sheets. Нажми «Запросить остатки»: бот пришлёт сводку с общим количеством (сейчас 16 шт.).</div><div id="catalog"></div><button class="cta secondary" id="stock">📦 Запросить остатки</button></section>
 <p class="footer">Watch Point · две разрешённые учётные записи · данные обрабатывает бот</p></div>
 <div id="overlay" class="overlay"><div class="modal"><h3 id="mt">Подтверждение</h3><div class="preview" id="preview"></div><div class="actions"><button id="back">Исправить</button><button id="go">Отправить боту</button></div></div></div>
 <script>
@@ -43,7 +43,31 @@ function confirmData(o){validDate(o.date);pending=o;var p=P.find(function(v){ret
 g('ssend').onclick=function(){try{g('serror').style.display='none';confirmData({schema:'wp-miniapp/1',action:'sale',nonce:uuid(),date:g('sd').value,sku:g('ss').value,qty:quantity('sq'),unitPrice:number('sp',false),fee:number('sf',true),expenses:number('se',true),channel:g('sc').value,kind:kind,note:g('sn').value.trim().slice(0,300)})}catch(e){fail('s',e)}};
 g('psend').onclick=function(){try{g('perror').style.display='none';confirmData({schema:'wp-miniapp/1',action:'receipt',nonce:uuid(),date:g('pd').value,sku:g('ps').value,qty:quantity('pq'),unitCost:number('pc',false),supplier:g('pv').value.trim().slice(0,70),note:g('pn').value.trim().slice(0,300)})}catch(e){fail('p',e)}};
 g('back').onclick=function(){g('overlay').classList.remove('open');pending=null};
-function send(o){if(locked)return;if(!tg||!tg.sendData){alert('Открой форму кнопкой внутри Telegram-бота Watch Point');return}if(new TextEncoder().encode(JSON.stringify(o)).length>4000){alert('Сократи комментарий');return}locked=true;g('go').disabled=true;g('stock').disabled=true;try{tg.sendData(JSON.stringify(o))}catch(e){locked=false;g('go').disabled=false;g('stock').disabled=false;alert(e.message)}}
+async function send(o){
+  if(locked)return;
+  const json=JSON.stringify(o);
+  if(new TextEncoder().encode(json).length>4000){alert('Сократи комментарий');return}
+  if(!tg){alert('Открой Mini App в Telegram-боте Watch Point');return}
+  const endpoint=new URLSearchParams(window.location.search).get('api')||'';
+  const menuLaunch=!!tg.initData;
+  if(menuLaunch&&!/^https:\/\/script\.google\.com\/macros\/s\/[-\w]+\/exec$/i.test(endpoint)){
+    alert('Нижнее меню ещё не подключено к Google Apps Script. Установи версию 3.2 и запусти upgradeMenuBot().');return;
+  }
+  if(!menuLaunch&&!tg.sendData){alert('Открой приложение кнопкой в чате Telegram-бота');return}
+  locked=true;g('go').disabled=true;g('stock').disabled=true;
+  if(menuLaunch){
+    try{
+      await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({initData:tg.initData,payload:o})});
+      g('overlay').classList.remove('open');
+      alert('✅ Запрос отправлен. Закрой Mini App и дождись квитанции в Telegram. Если квитанции нет, проверь таблицу до повторной отправки.');
+    }catch(e){
+      locked=false;g('go').disabled=false;g('stock').disabled=false;
+      alert('⚠️ Не удалось связаться с сервером. Проверь таблицу, прежде чем повторять: '+e.message)
+    }
+  }else{
+    try{tg.sendData(json)}catch(e){locked=false;g('go').disabled=false;g('stock').disabled=false;alert(e.message)}
+  }
+}
 g('go').onclick=function(){if(pending)send(pending)};
 g('stock').onclick=function(){send({schema:'wp-miniapp/1',action:'stock',nonce:uuid()})};
 })();
